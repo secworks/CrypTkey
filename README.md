@@ -1,7 +1,10 @@
 # ULX3S-HSM
-A small form factor High Security Module (HSM) Implemented on the
-[Radiona ULX3S](https://radiona.org/ulx3s/) board equipped with
-Lattice ECP-85F FPGA.
+(The name may change in the future to something cooler. Probably not
+Dave though. Possibly Nath-Horthath.)
+
+A small form factor High Security Module (HSM)
+Implemented on the [Radiona ULX3S](https://radiona.org/ulx3s/) board
+equipped with Lattice ECP-85F FPGA.
 
 
 ## Status
