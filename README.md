@@ -7,7 +7,7 @@ Just started. Not completed. **Does. Not. Work.**
 
 
 ## Introduction
-** The CrypTech HSM**
+**The CrypTech HSM**
 [The CrypTech project](https://cryptech.is/) developed the first truly
 open High Security Module capable of supporting PKCS11, provide a
 number of hardware accelerated functions - for example Elliptic Curve
@@ -15,7 +15,8 @@ and RSA generation and usage. High performance secure hashing, key
 derivation and key wrapping. And high performance, best in class
 random number generation.
 
-** The Tillitis Tkey**
+
+**The Tillitis Tkey**
 [Tillitis](https://tillitis.se/) has developed the [fully open]()
 secure token and application platform
 [Tkey](https://tillitis.se/products/tkey/). The Tkey System on Chip
@@ -24,8 +25,11 @@ needed to load and execute device applications capable of performing
 signing, SSH, key derivation etc.
 
 Crucially, the Tkey supports measured loading of device applications
-using the DICE mechanism to ensure application authentication and
-provisioning of the application base secret.
+using the
+[DICE](https://www.microsoft.com/en-us/research/project/dice-device-identifier-composition-engine/)
+mechanism to ensure application authentication and provisioning of the
+application base secret.
+
 
 **CrypTkey**
 The CrypTkey project tries to combine CrypTech with the Tkey. The goal
