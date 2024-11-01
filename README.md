@@ -1,10 +1,5 @@
-# ULX3S-HSM
-(The name may change in the future to something cooler. Probably not
-Dave though. Possibly Nath-Horthath.)
-
-A small form factor High Security Module (HSM)
-Implemented on the [Radiona ULX3S](https://radiona.org/ulx3s/) board
-equipped with Lattice ECP-85F FPGA.
+# CrypTkey
+The CrypTech HSM implemented on a Tillitis Tkey.
 
 
 ## Status
@@ -12,6 +7,7 @@ Just started. Not completed. **Does. Not. Work.**
 
 
 ## Introduction
+** The CrypTech HSM**
 [The CrypTech project](https://cryptech.is/) developed the first truly
 open High Security Module capable of supporting PKCS11, provide a
 number of hardware accelerated functions - for example Elliptic Curve
@@ -19,6 +15,7 @@ and RSA generation and usage. High performance secure hashing, key
 derivation and key wrapping. And high performance, best in class
 random number generation.
 
+** The Tillitis Tkey**
 [Tillitis](https://tillitis.se/) has developed the [fully open]()
 secure token and application platform
 [Tkey](https://tillitis.se/products/tkey/). The Tkey System on Chip
@@ -26,18 +23,27 @@ secure token and application platform
 needed to load and execute device applications capable of performing
 signing, SSH, key derivation etc.
 
-The ULX3S-HSM aims to combine the Tkey SoC design with cores and SW
-from the CrypTech project to build a compact, fully open HSM. At this
-stage it's unclear what functionality will fit, what performance will
-be possible etc. But lets find out!
+Crucially, the Tkey supports measured loading of device applications
+using the DICE mechanism to ensure application authentication and
+provisioning of the application base secret.
+
+**CrypTkey**
+The CrypTkey project tries to combine CrypTech with the Tkey. The goal
+is to provide a secure System on Chip based on the Tkey capable of
+implementing the CrypTech HSM as a device application.
+
+As a first step the Tkey is ported to the [Radiona
+ULX3S](https://radiona.org/ulx3s/) board equipped with the Lattice
+ECP-85F FPGA.the ULX3S FPGA board. The Tkey design is then expanded
+and modified to provide the functionality and performance reqquired to
+support the CrypTech HSM as a device application.
 
 
 ## Features
 A non exthausive, quite fuzzy list of features. More wild ideas really:
 
-- RISC-V based SoC with cores needed to support PKCS11 etc from
-  CrypTech and Tkey. This inlcudes timers, watchdog, interrupt, UART,
-  SPI.
+- RISC-V based SoC with cores needed to support the CrypTech HSM.This
+  inlcudes timers, watchdog, interrupt, UART, SPI.
 
 - At least 50+ MHz clock.
 
