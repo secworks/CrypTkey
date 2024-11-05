@@ -1,28 +1,28 @@
 //======================================================================
 //
-// ulx3s_hsm.v
+// cryptkey.v
 // ------------------
-// Top level module of the ULX3S-HSM.
+// Top level module of the CrypTkey FPGA.
 // Based of the application_fpga from the Tkey.
-// (c) Joachim Strömbergson
+// (c) 2024 Joachim Strömbergson
 //
 //======================================================================
 
 `default_nettype none
 
-module ulx3s_hsm(
-		 input wire clk_25mhz,
+module cryptkey(
+		         input wire clk_25mhz,
 
-		 output wire wifi_gpio0
+		         output wire wifi_gpio0
 
-	         output wire led0,
-	         output wire led1,
-	         output wire led2,
-	         output wire led3,
-	         output wire led4,
-	         output wire led5,
-	         output wire led6,
-	         output wire led7
+	             output wire led0,
+	             output wire led1,
+	             output wire led2,
+	             output wire led3,
+	             output wire led4,
+	             output wire led5,
+	             output wire led6,
+	             output wire led7
                  );
 
 
@@ -147,52 +147,59 @@ module ulx3s_hsm(
   //----------------------------------------------------------------
   // Module instantiations.
   //----------------------------------------------------------------
-  clk_reset_gen #(.RESET_CYCLES(200))
-  reset_gen_inst(.clk(clk), .rst_n(reset_n));
+  clk_reset_gen #(
+                  .RESET_CYCLES(100)
+                  )
+  clk_reset_gen_inst(
+                     .ext_clk(clk_25mhz),
+                     .clk(clk),
+                     .rst_n(reset_n)
+                     );
 
 
   picorv32 #(
-	     .ENABLE_COUNTERS(0),
-	     .TWO_STAGE_SHIFT(0),
-	     .CATCH_MISALIGN(0),
-	     .COMPRESSED_ISA(1),
-	     .ENABLE_FAST_MUL(1),
-	     .BARREL_SHIFTER(1)
-	     ) cpu(
-		   .clk(clk_25mhz),
-		   .resetn(1'h1),
-		   .trap(cpu_trap),
+	         .ENABLE_COUNTERS(0),
+	         .TWO_STAGE_SHIFT(0),
+	         .CATCH_MISALIGN(0),
+	         .COMPRESSED_ISA(1),
+	         .ENABLE_FAST_MUL(1),
+	         .BARREL_SHIFTER(1)
+	         )
+  cpu_inst(
+	       .clk(clk_25mhz),
+	       .resetn(1'h1),
+	       .trap(cpu_trap),
 
-		   .mem_valid(cpu_valid),
-		   .mem_ready(muxed_ready_reg),
-		   .mem_addr (cpu_addr),
-		   .mem_wdata(cpu_wdata),
-		   .mem_wstrb(cpu_wstrb),
-		   .mem_rdata(muxed_rdata_reg),
+	       .mem_valid(cpu_valid),
+	       .mem_ready(muxed_ready_reg),
+	       .mem_addr (cpu_addr),
+	       .mem_wdata(cpu_wdata),
+	       .mem_wstrb(cpu_wstrb),
+	       .mem_rdata(muxed_rdata_reg),
 
-                   // Defined unused ports. Makes lint happy. But
-                   // we still needs to help lint with empty ports.
-                   /* verilator lint_off PINCONNECTEMPTY */
-                   .irq(32'h0),
-                   .eoi(),
-                   .trace_valid(),
-                   .trace_data(),
-                   .mem_instr(cpu_instr),
-                   .mem_la_read(),
-                   .mem_la_write(),
-                   .mem_la_addr(),
-                   .mem_la_wdata(),
-                   .mem_la_wstrb(),
-                   .pcpi_valid(),
-                   .pcpi_insn(),
-                   .pcpi_rs1(),
-                   .pcpi_rs2(),
-                   .pcpi_wr(1'h0),
-                   .pcpi_rd(32'h0),
-                   .pcpi_wait(1'h0),
-                   .pcpi_ready(1'h0)
-                   /* verilator lint_on PINCONNECTEMPTY */
-	          );
+           // Defined unused ports. Makes lint happy. But
+           // we still needs to help lint with empty ports.
+           /* verilator lint_off PINCONNECTEMPTY */
+           .irq(32'h0),
+           .eoi(),
+           .trace_valid(),
+           .trace_data(),
+           .mem_instr(cpu_instr),
+           .mem_la_read(),
+           .mem_la_write(),
+           .mem_la_addr(),
+           .mem_la_wdata(),
+           .mem_la_wstrb(),
+           .pcpi_valid(),
+           .pcpi_insn(),
+           .pcpi_rs1(),
+           .pcpi_rs2(),
+           .pcpi_wr(1'h0),
+           .pcpi_rd(32'h0),
+           .pcpi_wait(1'h0),
+           .pcpi_ready(1'h0)
+           /* verilator lint_on PINCONNECTEMPTY */
+	       );
 //
 //
 //  rom rom_inst(
@@ -500,8 +507,8 @@ module ulx3s_hsm(
 //	end
 //      end
     end
-endmodule // ulx3s_hsm
+endmodule // cryptkey
 
 //======================================================================
-// EOF ulx3s_hsm.v
+// EOF cryptkey.v
 //======================================================================
