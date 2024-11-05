@@ -1,9 +1,11 @@
 //======================================================================
 //
 // cryptkey.v
-// ------------------
+// ----------
 // Top level module of the CrypTkey FPGA.
 // Based of the application_fpga from the Tkey.
+//
+//
 // (c) 2024 Joachim Strömbergson
 //
 //======================================================================
@@ -11,19 +13,19 @@
 `default_nettype none
 
 module cryptkey(
-		         input wire clk_25mhz,
+                input wire clk_25mhz,
 
-		         output wire wifi_gpio0
+                output wire wifi_gpio0
 
-	             output wire led0,
-	             output wire led1,
-	             output wire led2,
-	             output wire led3,
-	             output wire led4,
-	             output wire led5,
-	             output wire led6,
-	             output wire led7
-                 );
+                output wire led0,
+                output wire led1,
+                output wire led2,
+                output wire led3,
+                output wire led4,
+                output wire led5,
+                output wire led6,
+                output wire led7
+                );
 
 
   //----------------------------------------------------------------
@@ -62,7 +64,7 @@ module cryptkey(
   // Wires.
   //----------------------------------------------------------------
   wire          clk;
-  wire          reset_n;
+  wire          rst_n;
 
   /* verilator lint_off UNOPTFLAT */
   wire          cpu_trap;
@@ -153,29 +155,29 @@ module cryptkey(
   clk_reset_gen_inst(
                      .ext_clk(clk_25mhz),
                      .clk(clk),
-                     .rst_n(reset_n)
+                     .rst_n(rst_n)
                      );
 
 
   picorv32 #(
-	         .ENABLE_COUNTERS(0),
-	         .TWO_STAGE_SHIFT(0),
-	         .CATCH_MISALIGN(0),
-	         .COMPRESSED_ISA(1),
-	         .ENABLE_FAST_MUL(1),
-	         .BARREL_SHIFTER(1)
-	         )
+             .ENABLE_COUNTERS(0),
+             .TWO_STAGE_SHIFT(0),
+             .CATCH_MISALIGN(0),
+             .COMPRESSED_ISA(1),
+             .ENABLE_FAST_MUL(1),
+             .BARREL_SHIFTER(1)
+             )
   cpu_inst(
-	       .clk(clk_25mhz),
-	       .resetn(1'h1),
-	       .trap(cpu_trap),
+           .clk(clk_25mhz),
+           .resetn(1'h1),
+           .trap(cpu_trap),
 
-	       .mem_valid(cpu_valid),
-	       .mem_ready(muxed_ready_reg),
-	       .mem_addr (cpu_addr),
-	       .mem_wdata(cpu_wdata),
-	       .mem_wstrb(cpu_wstrb),
-	       .mem_rdata(muxed_rdata_reg),
+           .mem_valid(cpu_valid),
+           .mem_ready(muxed_ready_reg),
+           .mem_addr (cpu_addr),
+           .mem_wdata(cpu_wdata),
+           .mem_wstrb(cpu_wstrb),
+           .mem_rdata(muxed_rdata_reg),
 
            // Defined unused ports. Makes lint happy. But
            // we still needs to help lint with empty ports.
@@ -199,51 +201,51 @@ module cryptkey(
            .pcpi_wait(1'h0),
            .pcpi_ready(1'h0)
            /* verilator lint_on PINCONNECTEMPTY */
-	       );
+           );
 //
 //
 //  rom rom_inst(
 //               .clk(clk),
-//               .reset_n(reset_n),
+//               .rst_n(rst_n),
 //
 //               .cs(rom_cs),
 //               .address(rom_address),
 //               .read_data(rom_read_data),
-//	       .ready(rom_ready)
+//         .ready(rom_ready)
 //               );
 //
 //
 //  ram ram_inst(
 //               .clk(clk),
-//               .reset_n(reset_n),
+//               .rst_n(rst_n),
 //
 //               .cs(ram_cs),
 //               .we(ram_we),
 //               .address(ram_address),
 //               .write_data(ram_write_data),
 //               .read_data(ram_read_data),
-//	       .ready(ram_ready)
+//         .ready(ram_ready)
 //               );
 //
 //
 //  fw_ram fw_ram_inst(
-//		     .clk(clk),
-//		     .reset_n(reset_n),
+//           .clk(clk),
+//           .rst_n(rst_n),
 //
-//		     .fw_app_mode(fw_app_mode),
+//           .fw_app_mode(fw_app_mode),
 //
-//		     .cs(fw_ram_cs),
-//		     .we(fw_ram_we),
-//		     .address(fw_ram_address),
-//		     .write_data(fw_ram_write_data),
-//		     .read_data(fw_ram_read_data),
-//		     .ready(fw_ram_ready)
-//		    );
+//           .cs(fw_ram_cs),
+//           .we(fw_ram_we),
+//           .address(fw_ram_address),
+//           .write_data(fw_ram_write_data),
+//           .read_data(fw_ram_read_data),
+//           .ready(fw_ram_ready)
+//          );
 //
 //
 //  rosc trng_inst(
 //		   .clk(clk),
-//		   .reset_n(reset_n),
+//		   .rst_n(rst_n),
 //		   .cs(trng_cs),
 //		   .we(trng_we),
 //		   .address(trng_address),
@@ -255,7 +257,7 @@ module cryptkey(
 //
 //  timer timer_inst(
 //                   .clk(clk),
-//                   .reset_n(reset_n),
+//                   .rst_n(rst_n),
 //
 //                   .cs(timer_cs),
 //                   .we(timer_we),
@@ -268,20 +270,20 @@ module cryptkey(
 //
 //  uds uds_inst(
 //               .clk(clk),
-//               .reset_n(reset_n),
+//               .rst_n(rst_n),
 //
-//	       .fw_app_mode(fw_app_mode),
+//         .fw_app_mode(fw_app_mode),
 //
 //               .cs(uds_cs),
 //               .address(uds_address),
 //               .read_data(uds_read_data),
-//	       .ready(uds_ready)
+//         .ready(uds_ready)
 //               );
 //
 //
 //  uart uart_inst(
 //                 .clk(clk),
-//                 .reset_n(reset_n),
+//                 .rst_n(rst_n),
 //
 //                 .rxd(interface_tx),
 //                 .txd(interface_rx),
@@ -296,39 +298,39 @@ module cryptkey(
 //
 //
 //  touch_sense touch_sense_inst(
-//			       .clk(clk),
-//			       .reset_n(reset_n),
+//                 .clk(clk),
+//                 .rst_n(rst_n),
 //
-//			       .touch_event(touch_event),
+//                 .touch_event(touch_event),
 //
-//			       .cs(touch_sense_cs),
-//			       .we(touch_sense_we),
-//			       .address(touch_sense_address),
-//			       .read_data(touch_sense_read_data),
-//			       .ready(touch_sense_ready)
-//			       );
+//                 .cs(touch_sense_cs),
+//                 .we(touch_sense_we),
+//                 .address(touch_sense_address),
+//                 .read_data(touch_sense_read_data),
+//                 .ready(touch_sense_ready)
+//                 );
 //
 //
 //  tk1 tk1_inst(
-//	       .clk(clk),
-//	       .reset_n(reset_n),
+//         .clk(clk),
+//         .rst_n(rst_n),
 //
-//	       .fw_app_mode(fw_app_mode),
+//         .fw_app_mode(fw_app_mode),
 //
-//	       .cpu_addr(cpu_addr),
-//	       .cpu_instr(cpu_instr),
-//	       .cpu_valid(cpu_valid),
-//	       .cpu_trap(cpu_trap),
-//	       .force_trap(force_trap),
+//         .cpu_addr(cpu_addr),
+//         .cpu_instr(cpu_instr),
+//         .cpu_valid(cpu_valid),
+//         .cpu_trap(cpu_trap),
+//         .force_trap(force_trap),
 //
 //               .ram_addr_rand(ram_addr_rand),
-//	       .ram_data_rand(ram_data_rand),
+//         .ram_data_rand(ram_data_rand),
 //
 //`ifdef INCLUDE_SPI_MASTER
-//	       .spi_ss(spi_ss),
-//	       .spi_sck(spi_sck),
-//	       .spi_mosi(spi_mosi),
-//	       .spi_miso(spi_miso),
+//         .spi_ss(spi_ss),
+//         .spi_sck(spi_sck),
+//         .spi_mosi(spi_mosi),
+//         .spi_miso(spi_miso),
 //`endif // INCLUDE_SPI_MASTER
 //
 //               .led_r(led_r),
@@ -340,13 +342,13 @@ module cryptkey(
 //               .gpio3(app_gpio3),
 //               .gpio4(app_gpio4),
 //
-//	       .cs(tk1_cs),
-//	       .we(tk1_we),
-//	       .address(tk1_address),
-//	       .write_data(tk1_write_data),
-//	       .read_data(tk1_read_data),
-//	       .ready(tk1_ready)
-//	      );
+//         .cs(tk1_cs),
+//         .we(tk1_we),
+//         .address(tk1_address),
+//         .write_data(tk1_write_data),
+//         .read_data(tk1_read_data),
+//         .ready(tk1_ready)
+//        );
 //
 
 
@@ -356,7 +358,7 @@ module cryptkey(
   //----------------------------------------------------------------
   always @(posedge clk)
     begin : reg_update
-      if (!reset_n) begin
+      if (!rst_n) begin
         muxed_rdata_reg <= 32'h0;
         muxed_ready_reg <= 1'h0;
       end
@@ -432,64 +434,64 @@ module cryptkey(
 //          case (area_prefix)
 //            ROM_PREFIX: begin
 //              rom_cs          = 1'h1;
-//	      muxed_rdata_new = rom_read_data;
-//	      muxed_ready_new = rom_ready;
+//        muxed_rdata_new = rom_read_data;
+//        muxed_ready_new = rom_ready;
 //            end
 //
 //            RAM_PREFIX: begin
-//	      ram_cs          = 1'h1;
-//	      ram_we          = cpu_wstrb;
-//	      muxed_rdata_new = ram_read_data ^ ram_data_rand ^ {2{cpu_addr[15 : 0]}};
-//	      muxed_ready_new = ram_ready;
-//	    end
+//        ram_cs          = 1'h1;
+//        ram_we          = cpu_wstrb;
+//        muxed_rdata_new = ram_read_data ^ ram_data_rand ^ {2{cpu_addr[15 : 0]}};
+//        muxed_ready_new = ram_ready;
+//      end
 //
 //            RESERVED_PREFIX: begin
-//	      muxed_rdata_new = 32'h0;
-//	      muxed_ready_new = 1'h1;
+//        muxed_rdata_new = 32'h0;
+//        muxed_ready_new = 1'h1;
 //            end
 //
 //            MMIO_PREFIX: begin
 //              case (core_prefix)
 //		TRNG_PREFIX: begin
 //                  trng_cs         = 1'h1;
-//	          muxed_rdata_new = trng_read_data;
-//	          muxed_ready_new = trng_ready;
+//            muxed_rdata_new = trng_read_data;
+//            muxed_ready_new = trng_ready;
 //		end
 //
 //		TIMER_PREFIX: begin
 //                  timer_cs        = 1'h1;
-//	          muxed_rdata_new = timer_read_data;
-//	          muxed_ready_new = timer_ready;
+//            muxed_rdata_new = timer_read_data;
+//            muxed_ready_new = timer_ready;
 //		end
 //
 //		UDS_PREFIX: begin
 //                  uds_cs          = 1'h1;
-//	          muxed_rdata_new = uds_read_data;
-//	          muxed_ready_new = uds_ready;
+//            muxed_rdata_new = uds_read_data;
+//            muxed_ready_new = uds_ready;
 //		end
 //
 //		UART_PREFIX: begin
 //                  uart_cs         = 1'h1;
-//	          muxed_rdata_new = uart_read_data;
-//	          muxed_ready_new = uart_ready;
+//            muxed_rdata_new = uart_read_data;
+//            muxed_ready_new = uart_ready;
 //		end
 //
 //		TOUCH_SENSE_PREFIX: begin
 //                  touch_sense_cs  = 1'h1;
-//	          muxed_rdata_new = touch_sense_read_data;
-//	          muxed_ready_new = touch_sense_ready;
+//            muxed_rdata_new = touch_sense_read_data;
+//            muxed_ready_new = touch_sense_ready;
 //		end
 //
 //		FW_RAM_PREFIX: begin
 //                  fw_ram_cs       = 1'h1;
-//	          muxed_rdata_new = fw_ram_read_data;
-//	          muxed_ready_new = fw_ram_ready;
+//            muxed_rdata_new = fw_ram_read_data;
+//            muxed_ready_new = fw_ram_ready;
 //		end
 //
 //		TK1_PREFIX: begin
 //                  tk1_cs          = 1'h1;
-//	          muxed_rdata_new = tk1_read_data;
-//	          muxed_ready_new = tk1_ready;
+//            muxed_rdata_new = tk1_read_data;
+//            muxed_ready_new = tk1_ready;
 //		end
 //
 //		default: begin
@@ -500,8 +502,8 @@ module cryptkey(
 //            end // case: MMIO_PREFIX
 //
 //            default: begin
-//	      muxed_rdata_new = 32'h0;
-//	      muxed_ready_new = 1'h1;
+//        muxed_rdata_new = 32'h0;
+//        muxed_ready_new = 1'h1;
 //            end
 //          endcase // case (area_prefix)
 //	end
