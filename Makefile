@@ -46,6 +46,8 @@ fpga.bit: fpga.config
 fpga.config: fpga.json
 	nextpnr-ecp5 --85k --json $^ \
 		--lpf config/ulx3s_v20.lpf \
+		--top cryptkey \
+		--package CABGA381 \
 		--ignore-loops \
 		--textcfg $@
 
