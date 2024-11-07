@@ -52,7 +52,9 @@ module cryptkey(
   reg          muxed_ready_reg;
   reg          muxed_ready_new;
 
+  reg [31 : 0] led_ctr_reg;
 
+  
   //----------------------------------------------------------------
   // Wires.
   //----------------------------------------------------------------
@@ -137,7 +139,7 @@ module cryptkey(
   //----------------------------------------------------------------
   // Need to assign this to not reset the device.
   assign wifi_gpio0 = 1'h1;
-  assign led        = 8'haa;
+  assign led        = led_ctr_reg[27 : 20];
 
   
   //----------------------------------------------------------------
@@ -355,11 +357,13 @@ module cryptkey(
       if (!rst_n) begin
         muxed_rdata_reg <= 32'h0;
         muxed_ready_reg <= 1'h0;
+        led_ctr_reg     <= 32'h0;
       end
 
       else begin
         muxed_rdata_reg <= muxed_rdata_new;
         muxed_ready_reg <= muxed_ready_new;
+        led_ctr_reg     <= led_ctr_reg + 1'h1;
       end
     end
 
