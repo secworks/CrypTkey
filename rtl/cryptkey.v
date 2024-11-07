@@ -15,6 +15,9 @@
 module cryptkey(
                 input wire clk_25mhz,
 
+                input wire ftdi_txd,
+                output wire ftdi_rxd,
+
                 output wire wifi_gpio0,
 
                 output [7 : 0] led
@@ -53,6 +56,12 @@ module cryptkey(
   reg          muxed_ready_new;
 
   reg [31 : 0] led_ctr_reg;
+
+  reg          ftdi_rxd_reg; 
+  reg          ftdi_rxd_new; 
+  reg          ftdi_rxd_we;
+
+  reg          ftdi_txd_reg; 
 
   
   //----------------------------------------------------------------
@@ -140,7 +149,7 @@ module cryptkey(
   // Need to assign this to not reset the device.
   assign wifi_gpio0 = 1'h1;
   assign led        = led_ctr_reg[27 : 20];
-
+  assign ftdi_rxd   = ftdi_rxd_reg;
   
   //----------------------------------------------------------------
   // Module instantiations.
@@ -220,7 +229,7 @@ module cryptkey(
 //               .address(ram_address),
 //               .write_data(ram_write_data),
 //               .read_data(ram_read_data),
-//         .ready(ram_ready)
+//               .ready(ram_ready)
 //               );
 //
 //
@@ -358,16 +367,42 @@ module cryptkey(
         muxed_rdata_reg <= 32'h0;
         muxed_ready_reg <= 1'h0;
         led_ctr_reg     <= 32'h0;
+        ftdi_rxd_reg    <= 1'h0;
+        ftdi_txd_reg    <= 1'h0;
       end
 
       else begin
+        ftdi_txd_reg    <= ftdi_txd; 
         muxed_rdata_reg <= muxed_rdata_new;
         muxed_ready_reg <= muxed_ready_new;
         led_ctr_reg     <= led_ctr_reg + 1'h1;
+        
+        if (ftdi_rxd_we) begin
+          ftdi_rxd_reg <= ftdi_rxd_new;
+        end
+        
       end
     end
 
 
+  //----------------------------------------------------------------
+  // fake_io
+  //----------------------------------------------------------------
+  always @*
+    begin : fake_io
+      ftdi_rxd_new = 1'h0; 
+      ftdi_rxd_we  = 1'h0;
+
+      muxed_rdata_new = ftdi_txd_reg;
+      muxed_ready_new = 1'h1;
+      
+      if (|cpu_wstrb) begin
+        ftdi_rxd_new = cpu_wdata[0]; 
+        ftdi_rxd_we  = 1'h1;
+      end
+      
+    end
+  
   //----------------------------------------------------------------
   // cpu_mem_ctrl
   // CPU memory decode and control logic.
@@ -376,20 +411,19 @@ module cryptkey(
 //    begin : cpu_mem_ctrl
 //      reg [1 : 0] area_prefix;
 //      reg [5 : 0] core_prefix;
-//
+//      
 //      area_prefix         = cpu_addr[31 : 30];
 //      core_prefix         = cpu_addr[29 : 24];
-//
+//      
 //      muxed_ready_new     = 1'h0;
 //      muxed_rdata_new     = 32'h0;
-//
+//      
 //      rom_cs              = 1'h0;
 //      rom_address         = cpu_addr[13 : 2];
-//
-//      ram_cs              = 1'h0;
-//      ram_we              = 4'h0;
-//      ram_address         = cpu_addr[16 : 2] ^ ram_addr_rand;
-//      ram_write_data      = cpu_wdata ^ ram_data_rand ^ {2{cpu_addr[15 : 0]}};
+//    ram_cs              = 1'h0;
+//    ram_we              = 4'h0;
+//    ram_address         = cpu_addr[16 : 2] ^ ram_addr_rand;
+//    ram_write_data      = cpu_wdata;
 //
 //      fw_ram_cs           = 1'h0;
 //      fw_ram_we           = cpu_wstrb;
