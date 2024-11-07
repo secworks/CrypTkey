@@ -21,10 +21,12 @@ TOPMOD  = cryptkey
 
 # FPGA source files.
 
+CORES_SRC_DIR = cores
 VERILOG_SRC_DIR = rtl
 VERILOG_SRC = \
 	$(VERILOG_SRC_DIR)/cryptkey.v \
-	$(VERILOG_SRC_DIR)/clk_reset_gen.v
+	$(VERILOG_SRC_DIR)/clk_reset_gen.v \
+	$(CORES_SRC_DIR)/picorv32/rtl/picorv32.v
 
 
 #-------------------------------------------------------------------
@@ -43,7 +45,7 @@ fpga.bit: fpga.config
 
 fpga.config: fpga.json
 	nextpnr-ecp5 --85k --json $^ \
-		--lpf ../config/ulx3s_v20.lpf \
+		--lpf config/ulx3s_v20.lpf \
 		--ignore-loops \
 		--textcfg $@
 

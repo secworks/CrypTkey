@@ -17,11 +17,11 @@
 module clk_reset_gen #(parameter RESET_CYCLES = 100)
   (
    input wire ext_clk,
-
+   
    output wire clk,
-   output wire rst_n,
+   output wire rst_n
    );
-
+  
 
   //----------------------------------------------------------------
   // Registers with associated wires.
@@ -51,8 +51,9 @@ module clk_reset_gen #(parameter RESET_CYCLES = 100)
       begin : reg_update
         rst_n_reg <= rst_n_new;
 
-        if (rst_ctr_we)
+        if (rst_ctr_we) begin
           rst_ctr_reg <= rst_ctr_new;
+        end
       end
 
 
@@ -71,9 +72,9 @@ module clk_reset_gen #(parameter RESET_CYCLES = 100)
         rst_ctr_we  = 1'h1;
       end
     end
-
-endmodule clk_reset_gen
-
+  
+endmodule //clk_reset_gen
+  
 //======================================================================
 // EOF clk_reset_gen.v
 //======================================================================

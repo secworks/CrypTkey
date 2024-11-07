@@ -15,16 +15,9 @@
 module cryptkey(
                 input wire clk_25mhz,
 
-                output wire wifi_gpio0
+                output wire wifi_gpio0,
 
-                output wire led0,
-                output wire led1,
-                output wire led2,
-                output wire led3,
-                output wire led4,
-                output wire led5,
-                output wire led6,
-                output wire led7
+                output [7 : 0] led
                 );
 
 
@@ -144,8 +137,9 @@ module cryptkey(
   //----------------------------------------------------------------
   // Need to assign this to not reset the device.
   assign wifi_gpio0 = 1'h1;
+  assign led        = 8'haa;
 
-
+  
   //----------------------------------------------------------------
   // Module instantiations.
   //----------------------------------------------------------------
@@ -508,7 +502,7 @@ module cryptkey(
 //          endcase // case (area_prefix)
 //	end
 //      end
-    end
+//    end
 endmodule // cryptkey
 
 //======================================================================
