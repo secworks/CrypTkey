@@ -1,2 +1,0 @@
-read_verilog ../rtl/trng.v
-synth_ecp5 -json trng.json
