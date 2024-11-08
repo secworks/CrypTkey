@@ -26,6 +26,7 @@ VERILOG_SRC_DIR = rtl
 VERILOG_SRC = \
 	$(VERILOG_SRC_DIR)/cryptkey.v \
 	$(VERILOG_SRC_DIR)/clk_reset_gen.v \
+	$(CORES_SRC_DIR)/fpga_ram/rtl/fpga_ram.v \
 	$(CORES_SRC_DIR)/picorv32/rtl/picorv32.v
 
 

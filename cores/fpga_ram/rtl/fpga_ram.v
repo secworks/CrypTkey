@@ -14,7 +14,7 @@
 
 module fpga_ram(
                 input wire           clk,
-                input wire           reset_n,
+                input wire           rst_n,
 
                 input  wire          cs,
                 input  wire [3 : 0]  we,
@@ -53,7 +53,7 @@ module fpga_ram(
   //----------------------------------------------------------------
   always @(posedge clk) 
     begin : reg_update
-      if (!reset_n) begin
+      if (!rst_n) begin
         ready_reg <= 1'h0;
       end
       
