@@ -37,7 +37,7 @@ module srng_rng(
                 input wire           clk,
                 input wire           reset_n,
                 
-                input wire           reseed,
+                input wire           seed,
                 input wire           next,
 
                 output wire          error,
@@ -49,64 +49,142 @@ module srng_rng(
   //----------------------------------------------------------------
   // Internal constant and parameter definitions.
   //----------------------------------------------------------------
-  localparam CTRL_IDLE;
-  localparam CTRL_SEED;
-  localparam CTRL_UPDATE;
+  // Max number of blocks before reseeding.
+  localparam MAX_NUM_BLOCKS = 32'h00000010;
+
+  localparam [2: 0] CTRL_IDLE   = 3'h0;
+  localparam [2: 0] CTRL_SEED   = 3'h1;
+  localparam [2: 0] CTRL_UPDATE = 3'h3;
 
   
   //----------------------------------------------------------------
   // Registers including update variables and write enable.
   //----------------------------------------------------------------
-  reg [31 : 0]  seed_mem_reg [0 : 15];
-  reg [31 : 0]  seed_mem_new [0 : 15];
-  reg  [15 :0]  seed_we;
+  reg [31 : 0]   block_word_0_reg;
+  reg [31 : 0]   block_word_0_new;
+  reg            block_word_0_we;
+
+  reg [31 : 0]   block_word_1_reg;
+  reg [31 : 0]   block_word_1_new;
+  reg            block_word_1_we;
+
+  reg [31 : 0]   block_word_2_reg;
+  reg [31 : 0]   block_word_2_new;
+  reg            block_word_2_we;
+
+  reg [31 : 0]   block_word_3_reg;
+  reg [31 : 0]   block_word_3_new;
+  reg            block_word_3_we;
+
+  reg [31 : 0]   block_word_4_reg;
+  reg [31 : 0]   block_word_4_new;
+  reg            block_word_4_we;
+
+  reg [31 : 0]   block_word_5_reg;
+  reg [31 : 0]   block_word_5_new;
+  reg            block_word_5_we;
+
+  reg [31 : 0]   block_word_6_reg;
+  reg [31 : 0]   block_word_6_new;
+  reg            block_word_6_we;
+
+  reg [31 : 0]   block_word_7_reg;
+  reg [31 : 0]   block_word_7_new;
+  reg            block_word_7_we;
+
+  reg [31 : 0]   block_word_8_reg;
+  reg [31 : 0]   block_word_8_new;
+  reg            block_word_8_we;
+
+  reg [31 : 0]   block_word_9_reg;
+  reg [31 : 0]   block_word_9_new;
+  reg            block_word_9_we;
+
+  reg [31 : 0]   block_word_a_reg;
+  reg [31 : 0]   block_word_a_new;
+  reg            block_word_a_we;
+
+  reg [31 : 0]   block_word_b_reg;
+  reg [31 : 0]   block_word_b_new;
+  reg            block_word_b_we;
+
+  reg [31 : 0]   block_word_c_reg;
+  reg [31 : 0]   block_word_c_new;
+  reg            block_word_c_we;
+
+  reg [31 : 0]   block_word_d_reg;
+  reg [31 : 0]   block_word_d_new;
+  reg            block_word_d_we;
+
+  reg [31 : 0]   block_word_e_reg;
+  reg [31 : 0]   block_word_e_new;
+  reg            block_word_e_we;
+
+  reg [31 : 0]   block_word_f_reg;
+  reg [31 : 0]   block_word_f_new;
+  reg            block_word_f_we;
+
+  reg [31 : 0]  digest_0_mem [0 : 7];
+  reg           digest_0_mem_we;
+
+  reg [31 : 0]  digest_1_mem [0 : 7];
+  reg           digest_1_mem_we;
 
   reg           seed_status_reg;
   reg           seed_status_rew;
   reg           seed_status_we;
     
-  reg [31 :0]   block_ctr_reg;
-  reg [31 :0]   block_ctr_new;
-  reg           block_ctr_inc;
-  reg           block_ctr_set;
-  reg           block_ctr_we;
+  reg [31 : 0]  digest_ctr_reg;
+  reg [31 : 0]  digest_ctr_new;
+  reg           digest_ctr_inc;
+  reg           digest_ctr_rst;
+  reg           digest_ctr_we;
 
-  reg [31 : 0] digest0_mem [0 : 7];
-  reg          digest0_mem_we;
-
-  reg [31 : 0] digest1_mem [0 : 7];
-  reg          digest1_mem_we;
-
-  reg [2 : 0]  digest_word_ctr_reg;
-  reg [2 : 0]  digest_word_ctr_new;
-  reg          digest_word_ctr_inc;
-  reg          digest_word_ctr_rst;
-  reg          digest_word_ctr_we;
+  reg [2 : 0]   digest_word_ctr_reg;
+  reg [2 : 0]   digest_word_ctr_new;
+  reg           digest_word_ctr_inc;
+  reg           digest_word_ctr_rst;
+  reg           digest_word_ctr_we;
     
-  reg          digest_select_reg;
-  reg          digest_select_we;
+  reg           digest_select_reg;
+  reg           digest_select_we;
 
-  reg [2 : 0]  srng_core_reg;
-  reg [2 : 0]  srng_core_new;
-  reg          srng_core_we;
+  reg [2 : 0]   srng_core_ctrl_reg;
+  reg [2 : 0]   srng_core_ctrl_new;
+  reg           srng_core_ctrl_we;
 
   
   //----------------------------------------------------------------
   // Wires.
   //----------------------------------------------------------------
-  reg [31 : 0]   tmp_read_data;
+  reg            blake2s_init;
+  reg            blake2s_update;
+  reg            blake2s_finish;
+
+  wire [511 : 0] blake2s_block;
+  wire [255 : 0] blake2w_digest;
+  wire           blake2s_ready;
+
   wire           trng_error;
   wire           trng_ready;
   wire [31 : 0]  trng_data;
+
+  reg            block_seed;
+  reg            block_update;
+  reg [31 : 0]   tmp_read_data;
 
 
   //----------------------------------------------------------------
   // Concurrent connectivity for ports etc.
   //----------------------------------------------------------------
-  assign core_block = {block_mem[0],  block_mem[1],  block_mem[2],  block_mem[3],
-                       block_mem[4],  block_mem[5],  block_mem[6],  block_mem[7],
-                       block_mem[8],  block_mem[9],  block_mem[10], block_mem[11],
-                       block_mem[12], block_mem[13], block_mem[14], block_mem[15]};
+  assign blake2s_block = {block_word_0_reg, block_word_1_reg, 
+                          block_word_2_reg, block_word_3_reg, 
+                          block_word_4_reg, block_word_5_reg, 
+                          block_word_6_reg, block_word_7_reg, 
+                          block_word_8_reg, block_word_9_reg, 
+                          block_word_a_reg, block_word_b_reg, 
+                          block_word_c_reg, block_word_d_reg, 
+                          block_word_e_reg, block_word_f_reg};
 
   assign read_data = tmp_read_data;
 
@@ -118,15 +196,15 @@ module srng_rng(
 				 .clk(clk),
 				 .reset_n(reset_n),
 
-				 .init(init_reg),
-				 .update(update_reg),
-				 .finish(finish_reg),
+				 .init(blake2s_init),
+				 .update(blake2s_update),
+				 .finish(blak2s_finish),
 
-				 .block(core_block),
-				 .blocklen(blocklen_reg),
+				 .block(blake2s_block),
+				 .blocklen(blake2s_block_len),
 
-				 .digest(core_digest),
-				 .ready(core_ready)
+				 .digest(blake2s_digest),
+				 .ready(blake2s_ready)
 				 );
 
 
@@ -150,75 +228,384 @@ module srng_rng(
 
       if (!reset_n)
         begin
-          for (i = 0 ; i < 16 ; i = i + 1)
-            block_mem[i] <= 32'h0;
+          for (i = 0 ; i < 8 ; i = i + 1) begin
+            digest_0_mem <= 32'h0;
+            digest_1_mem <= 32'h0;
+          end
 
-          init_reg     <= 1'h0;
-          update_reg   <= 1'h0;
-          finish_reg   <= 1'h0;
-          blocklen_reg <= 7'h0;
+          block_word_0_reg         <= 32'h0;
+          block_word_1_reg         <= 32'h0;
+          block_word_2_reg         <= 32'h0;
+          block_word_3_reg         <= 32'h0;
+          block_word_4_reg         <= 32'h0;
+          block_word_5_reg         <= 32'h0;
+          block_word_6_reg         <= 32'h0;
+          block_word_7_reg         <= 32'h0;
+          block_word_8_reg         <= 32'h0;
+          block_word_9_reg         <= 32'h0;
+          block_word_a_reg         <= 32'h0;
+          block_word_b_reg         <= 32'h0;
+          block_word_c_reg         <= 32'h0;
+          block_word_d_reg         <= 32'h0;
+          block_word_e_reg         <= 32'h0;
+          block_word_f_reg         <= 32'h0;
+          seed_status              <= 1'h0;
+          digest_word_ctr_reg      <= 3'h0;
+          digest_select_reg        <= 1'h0;
+          srng_core_ctrl_reg       <= CTRL_IDLE;
         end
       else
         begin
-          init_reg   <= init_new;
-          update_reg <= update_new;
-          finish_reg <= finish_new;
-
-          if (blocklen_we) begin
-            blocklen_reg <= write_data[6 : 0];
+          if (block_word_0_we) begin
+            block_word_0_reg <= block_word_0_new;
           end
 
-          if (block_mem_we) begin
-            block_mem[address[3 : 0]] <= write_data;
+          if (block_word_1_we) begin
+            block_word_1_reg <= block_word_1_new;
           end
+
+          if (block_word_2_we) begin
+            block_word_2_reg <= block_word_2_new;
+          end
+
+          if (block_word_3_we) begin
+            block_word_3_reg <= block_word_3_new;
+          end
+
+          if (block_word_4_we) begin
+            block_word_4_reg <= block_word_4_new;
+          end
+
+          if (block_word_5_we) begin
+            block_word_5_reg <= block_word_5_new;
+          end
+
+          if (block_word_6_we) begin
+            block_word_6_reg <= block_word_6_new;
+          end
+
+          if (block_word_7_we) begin
+            block_word_7_reg <= block_word_7_new;
+          end
+
+          if (block_word_8_we) begin
+            block_word_8_reg <= block_word_8_new;
+          end
+
+          if (block_word_9_we) begin
+            block_word_9_reg <= block_word_9_new;
+          end
+
+          if (block_word_a_we) begin
+            block_word_a_reg <= block_word_a_new;
+          end
+
+          if (block_word_b_we) begin
+            block_word_b_reg <= block_word_b_new;
+          end
+
+          if (block_word_c_we) begin
+            block_word_c_reg <= block_word_c_new;
+          end
+
+          if (block_word_d_we) begin
+            block_word_d_reg <= block_word_d_new;
+          end
+
+          if (block_word_e_we) begin
+            block_word_e_reg <= block_word_e_new;
+          end
+
+          if (block_word_f_we) begin
+            block_word_f_reg <= block_word_f_new;
+          end
+
+          if (digest_0_mem_we) begin
+            digest_0_mem[0] <= blake2s_digest[031 : 000];
+            digest_0_mem[1] <= blake2s_digest[063 : 032];
+            digest_0_mem[2] <= blake2s_digest[095 : 064];
+            digest_0_mem[3] <= blake2s_digest[127 : 096];
+            digest_0_mem[4] <= blake2s_digest[159 : 128];
+            digest_0_mem[5] <= blake2s_digest[191 : 160];
+            digest_0_mem[6] <= blake2s_digest[223 : 192];
+            digest_0_mem[7] <= blake2s_digest[255 : 224];
+          end
+
+          if (digest_1_mem_we) begin
+            digest_1_mem[0] <= blake2s_digest[031 : 000];
+            digest_1_mem[1] <= blake2s_digest[063 : 032];
+            digest_1_mem[2] <= blake2s_digest[095 : 064];
+            digest_1_mem[3] <= blake2s_digest[127 : 096];
+            digest_1_mem[4] <= blake2s_digest[159 : 128];
+            digest_1_mem[5] <= blake2s_digest[191 : 160];
+            digest_1_mem[6] <= blake2s_digest[223 : 192];
+            digest_1_mem[7] <= blake2s_digest[255 : 224];
+          end
+          
+          if (seed_status_we) begin
+            seed_status_reg <= seed_status_new;
+          end
+
+          if (digest_ctr_we) begin
+            digest_ctr_reg <= digest_ctr_new;
+          end
+       
+          if (digest_word_ctr_we) begin
+            digest_word_ctr_reg <= digest_word_ctr_new;
+          end
+          
+          if (digest_select_we) begin
+            digest_select_reg <= ~digest_select_reg
+          end
+          
+          if (srng_core_ctrl_we) begin
+            srng_core_ctrl_reg <= srng_core_ctrl_new;
+          end
+          
         end
     end // reg_update
 
-
+  
   //----------------------------------------------------------------
-  // api
-  // The interface command decoding logic.
+  // data_select_logic
+  //
+  // Logic that selects which digest memory and word presented 
+  // to the user when reading the data.
+  //----------------------------------------------------------------
+  always @*
+    begin : data_select_logic;
+      if ~digest_select_reg begin
+        tmp_read_data = digest_0_mem[digest_word_ctr_reg];
+      end 
+      else begin
+        tmp_read_data = digest_1_mem[digest_word_ctr_reg];
+      end
+    end
+      
+  
+  //----------------------------------------------------------------
+  // block_logic
+  //
+  // Logic that seeds or updates the state block.
+  //----------------------------------------------------------------
+  always @*
+    begin : block_logic
+      block_word_0_new = trng_data;
+      block_word_0_we = 1'h0;
+
+      block_word_1_new = trng_data;
+      block_word_1_we = 1'h0;
+
+      block_word_2_new = trng_data;
+      block_word_2_we = 1'h0;
+
+      block_word_3_new = trng_data;
+      block_word_3_we = 1'h0;
+
+      block_word_4_new = trng_data;
+      block_word_4_we = 1'h0;
+
+      block_word_5_new = trng_data;
+      block_word_5_we = 1'h0;
+
+      block_word_6_new = trng_data;
+      block_word_6_we = 1'h0;
+
+      block_word_7_new = trng_data;
+      block_word_7_we = 1'h0;
+
+      block_word_8_new = trng_data;
+      block_word_8_we = 1'h0;
+
+      block_word_9_new = trng_data;
+      block_word_9_we = 1'h0;
+
+      block_word_a_new = trng_data;
+      block_word_a_we = 1'h0;
+
+      block_word_b_new = trng_data;
+      block_word_b_we = 1'h0;
+
+      block_word_c_new = trng_data;
+      block_word_c_we = 1'h0;
+
+      block_word_d_new = trng_data;
+      block_word_d_we = 1'h0;
+
+      block_word_e_new = trng_data;
+      block_word_e_we = 1'h0;
+
+      block_word_f_new = trng_data;
+      block_word_f_we = 1'h0;
+      
+      if (seed_block) begin
+        case (block_word_ctr_reg)
+          0: block_word_0_we = 1'h1;
+          1: block_word_1_we = 1'h1;
+          2: block_word_2_we = 1'h1;
+          3: block_word_3_we = 1'h1;
+          4: block_word_4_we = 1'h1;
+          5: block_word_5_we = 1'h1;
+          6: block_word_6_we = 1'h1;
+          7: block_word_7_we = 1'h1;
+          8: block_word_8_we = 1'h1;
+          9: block_word_9_we = 1'h1;
+          a: block_word_a_we = 1'h1;
+          b: block_word_b_we = 1'h1;
+          c: block_word_c_we = 1'h1;
+          d: block_word_d_we = 1'h1;
+          e: block_word_e_we = 1'h1;
+          f: block_word_f_we = 1'h1;
+        endcase // case (block_word_ctr_reg)
+      end
+
+      if (update_block) begin
+        block_word_0_new = block0_reg + 1'h1;
+        block_word_0_we  = 1'h1;
+
+        block_word_8_new = blake2s_digest[031 : 000];
+        block_word_9_we  = 1'h1;
+
+        block_word_8_new = blake2s_digest[063 : 032];
+        block_word_9_we  = 1'h1;
+
+        block_word_a_new = blake2s_digest[095 : 064];
+        block_word_a_we  = 1'h1;
+
+        block_word_b_new = blake2s_digest[127 : 096];
+        block_word_b_we  = 1'h1;
+
+        block_word_c_new = blake2s_digest[159 : 128];
+        block_word_c_we  = 1'h1;
+
+        block_word_d_new = blake2s_digest[191 : 160];
+        block_word_d_we  = 1'h1;
+
+        block_word_e_new = blake2s_digest[223 : 192];
+        block_word_e_we  = 1'h1;
+
+        block_word_f_new = blake2s_digest[255 : 224];
+        block_word_f_we  = 1'h1;
+      end
+    end
+
+  
+  //----------------------------------------------------------------
+  // digest_ctr
+  //
+  // Logic that implements the digest counter.
+  //----------------------------------------------------------------
+  always @*
+    begin : digest_ctr
+      digest_ctr_new = 32'h0;
+      digest_ctr_we  = 1'h0;
+
+      if (digest_ctr_rst) begin
+        digest_ctr_new = 32'h0;
+        digest_ctr_we  = 1'h1;
+      end
+      
+      if (digest_ctr_inc) begin
+        digest_ctr_new = digest_ctr_reg + 1'h1;
+        digest_ctr_we  = 1'h1;
+      end
+    end
+
+  
+  //----------------------------------------------------------------
+  // digest_word_ctr
+  //
+  // Logic that implements the digest wordf counter.
+  //----------------------------------------------------------------
+  always @*
+    begin : digest_word_ctr
+      digest_word_ctr_new = 3'h0;
+      digest_word_ctr_we  = 1'h0;
+
+      if (digest_word_ctr_rst) begin
+        digest_word_ctr_new = 3'h0;
+        digest_word_ctr_we  = 1'h1;
+      end
+      
+      if (digest_word_ctr_inc) begin
+        digest_word_ctr_new = digest_word_ctr_reg + 1'h1;
+        digest_word_ctr_we  = 1'h1;
+      end
+    end
+
+  
+  //----------------------------------------------------------------
+  // srng_ctrl
+  //
+  // State machine controlling the srng.
   //----------------------------------------------------------------
   always @*
     begin : api
-      init_new      = 1'h0;
-      update_new    = 1'h0;
-      finish_new    = 1'h0;
-      block_mem_we  = 1'h0;
-      blocklen_we   = 1'h0;
-      tmp_read_data = 32'h0;
+      block_seed          = 1'h0;
+      block_update        = 1'h0;
+      blake2s_init        = 1'h0;
+      blake2s_next        = 1'h0;
+      blake2s_finish      = 1'h0;
+      digest_select_we    = 1'h0;
+      digest_0_mem_we     = 1'h0;
+      digest_1_mem_we     = 1'h0;
+      digest_word_ctr_inc = 1'h0;
+      digest_word_ctr_rst = 1'h0;
+      seed_status_new     = 1'h0;
+      seed_status_we      = 1'h0;
+      ready_new           = 1'h0;
+      ready_we            = 1'h0;
+      srng_core_ctrl_new  = CTRL_IDLE;
+      srng_core_ctrl_we   = 1'h0;
+      
+      case (srng_core_ctrl_reg)
+        CTRL_IDLE: begin
+          if (seed) or (~seed_status_reg) begin
+            ready_new           = 1'h0;
+            ready_we            = 1'h1;
+            srng_core_ctrl_new  = CTRL_SEED0;
+            srng_core_ctrl_we   = 1'h1;
+          end
 
-      if (cs)
-        begin
-          if (we)
-            begin
-              if (address == ADDR_CTRL) begin
-                init_new   = write_data[CTRL_INIT_BIT];
-                update_new = write_data[CTRL_UPDATE_BIT];
-                finish_new = write_data[CTRL_FINISH_BIT];
-              end
-
-              if (address == ADDR_BLOCKLEN) begin
-                blocklen_we = 1;
-              end
-
-              if ((address >= ADDR_BLOCK0) && (address <= ADDR_BLOCK15)) begin
-                block_mem_we = 1;
-              end
+          if (next) begin
+            digest_word_ctr_inc = 1'h1;
+            
+            if (digest_word_ctr_reg == 4'h0) begin
+              ready_new           = 1'h0;
+              ready_we            = 1'h1;
+              srng_core_ctrl_new  = CTRL_UPDATE;
+              srng_core_ctrl_we   = 1'h1;
             end
 
-          else
-            begin
-              if (address == ADDR_STATUS) begin
-                tmp_read_data = {31'h0, core_ready};
-              end
-
-              if ((address >= ADDR_DIGEST0) && (address <= ADDR_DIGEST7)) begin
-                tmp_read_data = core_digest[(7 - (address - ADDR_DIGEST0)) * 32 +: 32];
-              end
+            if (digest_word_ctr_reg == 3'hf) begin
+              digest_select_we    = 1'h1;
             end
+          end
         end
-    end // api
+
+        
+        CTRL_SEED: begin
+          ready_new           = 1'h1;
+          ready_we            = 1'h1;
+          seed_status_new     = 1'h1;
+          seed_status_we      = 1'h1;
+          srng_core_ctrl_new  = CTRL_IDLE;
+          srng_core_ctrl_we   = 1'h1;
+        end
+
+        
+        CTRL_UPDATE: begin
+          ready_new           = 1'h1;
+          ready_we            = 1'h1;
+          srng_core_ctrl_new  = CTRL_IDLE;
+          srng_core_ctrl_we   = 1'h1;
+        end
+        
+        default: begin
+        end
+      endcase // case (srng_core_ctrl_reg)
+    end // srng_ctrl
+
 endmodule // srng
 
 //======================================================================
