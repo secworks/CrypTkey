@@ -1,0 +1,226 @@
+//======================================================================
+//
+// srng_core.v
+// -----------
+// Secure random number generator core for CrypTkey.
+//
+// Author: Joachim Strömbergson// Copyright (c) 2024, Assured AB
+//
+// Redistribution and use in source and binary forms, with or
+// without modification, are permitted provided that the following
+// conditions are met:
+//
+// 1. Redistributions of source code must retain the above copyright
+//    notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+//    notice, this list of conditions and the following disclaimer in
+//    the documentation and/or other materials provided with the
+//    distribution.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+// FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+// COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+// INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+// BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+// STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+// ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+//======================================================================
+
+module srng_rng(
+                input wire           clk,
+                input wire           reset_n,
+                
+                input wire           reseed,
+                input wire           next,
+
+                output wire          error,
+                output wire          ready,
+                output wire [31 : 0] read_data
+              );
+
+
+  //----------------------------------------------------------------
+  // Internal constant and parameter definitions.
+  //----------------------------------------------------------------
+  localparam CTRL_IDLE;
+  localparam CTRL_SEED;
+  localparam CTRL_UPDATE;
+
+  
+  //----------------------------------------------------------------
+  // Registers including update variables and write enable.
+  //----------------------------------------------------------------
+  reg [31 : 0]  seed_mem_reg [0 : 15];
+  reg [31 : 0]  seed_mem_new [0 : 15];
+  reg  [15 :0]  seed_we;
+
+  reg           seed_status_reg;
+  reg           seed_status_rew;
+  reg           seed_status_we;
+    
+  reg [31 :0]   block_ctr_reg;
+  reg [31 :0]   block_ctr_new;
+  reg           block_ctr_inc;
+  reg           block_ctr_set;
+  reg           block_ctr_we;
+
+  reg [31 : 0] digest0_mem [0 : 7];
+  reg          digest0_mem_we;
+
+  reg [31 : 0] digest1_mem [0 : 7];
+  reg          digest1_mem_we;
+
+  reg [2 : 0]  digest_word_ctr_reg;
+  reg [2 : 0]  digest_word_ctr_new;
+  reg          digest_word_ctr_inc;
+  reg          digest_word_ctr_rst;
+  reg          digest_word_ctr_we;
+    
+  reg          digest_select_reg;
+  reg          digest_select_we;
+
+  reg [2 : 0]  srng_core_reg;
+  reg [2 : 0]  srng_core_new;
+  reg          srng_core_we;
+
+  
+  //----------------------------------------------------------------
+  // Wires.
+  //----------------------------------------------------------------
+  reg [31 : 0]   tmp_read_data;
+  wire           trng_error;
+  wire           trng_ready;
+  wire [31 : 0]  trng_data;
+
+
+  //----------------------------------------------------------------
+  // Concurrent connectivity for ports etc.
+  //----------------------------------------------------------------
+  assign core_block = {block_mem[0],  block_mem[1],  block_mem[2],  block_mem[3],
+                       block_mem[4],  block_mem[5],  block_mem[6],  block_mem[7],
+                       block_mem[8],  block_mem[9],  block_mem[10], block_mem[11],
+                       block_mem[12], block_mem[13], block_mem[14], block_mem[15]};
+
+  assign read_data = tmp_read_data;
+
+
+  //----------------------------------------------------------------
+  // core instantiation.
+  //----------------------------------------------------------------
+  blake2s_core blake2s_core_inst(
+				 .clk(clk),
+				 .reset_n(reset_n),
+
+				 .init(init_reg),
+				 .update(update_reg),
+				 .finish(finish_reg),
+
+				 .block(core_block),
+				 .blocklen(blocklen_reg),
+
+				 .digest(core_digest),
+				 .ready(core_ready)
+				 );
+
+
+  trng trng_inst(
+		 .clk(clk),
+		 .reset_n(reset_n),
+
+		 .error(trng_error),
+
+		 .data(trng_data),
+		 .ready(trng_ready)
+		 );
+
+
+  //----------------------------------------------------------------
+  // reg_update
+  //----------------------------------------------------------------
+  always @ (posedge clk)
+    begin : reg_update
+      integer i;
+
+      if (!reset_n)
+        begin
+          for (i = 0 ; i < 16 ; i = i + 1)
+            block_mem[i] <= 32'h0;
+
+          init_reg     <= 1'h0;
+          update_reg   <= 1'h0;
+          finish_reg   <= 1'h0;
+          blocklen_reg <= 7'h0;
+        end
+      else
+        begin
+          init_reg   <= init_new;
+          update_reg <= update_new;
+          finish_reg <= finish_new;
+
+          if (blocklen_we) begin
+            blocklen_reg <= write_data[6 : 0];
+          end
+
+          if (block_mem_we) begin
+            block_mem[address[3 : 0]] <= write_data;
+          end
+        end
+    end // reg_update
+
+
+  //----------------------------------------------------------------
+  // api
+  // The interface command decoding logic.
+  //----------------------------------------------------------------
+  always @*
+    begin : api
+      init_new      = 1'h0;
+      update_new    = 1'h0;
+      finish_new    = 1'h0;
+      block_mem_we  = 1'h0;
+      blocklen_we   = 1'h0;
+      tmp_read_data = 32'h0;
+
+      if (cs)
+        begin
+          if (we)
+            begin
+              if (address == ADDR_CTRL) begin
+                init_new   = write_data[CTRL_INIT_BIT];
+                update_new = write_data[CTRL_UPDATE_BIT];
+                finish_new = write_data[CTRL_FINISH_BIT];
+              end
+
+              if (address == ADDR_BLOCKLEN) begin
+                blocklen_we = 1;
+              end
+
+              if ((address >= ADDR_BLOCK0) && (address <= ADDR_BLOCK15)) begin
+                block_mem_we = 1;
+              end
+            end
+
+          else
+            begin
+              if (address == ADDR_STATUS) begin
+                tmp_read_data = {31'h0, core_ready};
+              end
+
+              if ((address >= ADDR_DIGEST0) && (address <= ADDR_DIGEST7)) begin
+                tmp_read_data = core_digest[(7 - (address - ADDR_DIGEST0)) * 32 +: 32];
+              end
+            end
+        end
+    end // api
+endmodule // srng
+
+//======================================================================
+// EOF srng.v
+//======================================================================
