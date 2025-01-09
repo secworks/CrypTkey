@@ -72,69 +72,9 @@ module srng_rng(
   //----------------------------------------------------------------
   // Registers including update variables and write enable.
   //----------------------------------------------------------------
-  reg [31 : 0]   block_word_0_reg;
-  reg [31 : 0]   block_word_0_new;
-  reg            block_word_0_we;
-
-  reg [31 : 0]   block_word_1_reg;
-  reg [31 : 0]   block_word_1_new;
-  reg            block_word_1_we;
-
-  reg [31 : 0]   block_word_2_reg;
-  reg [31 : 0]   block_word_2_new;
-  reg            block_word_2_we;
-
-  reg [31 : 0]   block_word_3_reg;
-  reg [31 : 0]   block_word_3_new;
-  reg            block_word_3_we;
-
-  reg [31 : 0]   block_word_4_reg;
-  reg [31 : 0]   block_word_4_new;
-  reg            block_word_4_we;
-
-  reg [31 : 0]   block_word_5_reg;
-  reg [31 : 0]   block_word_5_new;
-  reg            block_word_5_we;
-
-  reg [31 : 0]   block_word_6_reg;
-  reg [31 : 0]   block_word_6_new;
-  reg            block_word_6_we;
-
-  reg [31 : 0]   block_word_7_reg;
-  reg [31 : 0]   block_word_7_new;
-  reg            block_word_7_we;
-
-  reg [31 : 0]   block_word_8_reg;
-  reg [31 : 0]   block_word_8_new;
-  reg            block_word_8_we;
-
-  reg [31 : 0]   block_word_9_reg;
-  reg [31 : 0]   block_word_9_new;
-  reg            block_word_9_we;
-
-  reg [31 : 0]   block_word_a_reg;
-  reg [31 : 0]   block_word_a_new;
-  reg            block_word_a_we;
-
-  reg [31 : 0]   block_word_b_reg;
-  reg [31 : 0]   block_word_b_new;
-  reg            block_word_b_we;
-
-  reg [31 : 0]   block_word_c_reg;
-  reg [31 : 0]   block_word_c_new;
-  reg            block_word_c_we;
-
-  reg [31 : 0]   block_word_d_reg;
-  reg [31 : 0]   block_word_d_new;
-  reg            block_word_d_we;
-
-  reg [31 : 0]   block_word_e_reg;
-  reg [31 : 0]   block_word_e_new;
-  reg            block_word_e_we;
-
-  reg [31 : 0]   block_word_f_reg;
-  reg [31 : 0]   block_word_f_new;
-  reg            block_word_f_we;
+  reg [31 : 0]  block_mem [0 : 15];
+  reg [31 : 0]  block_mem_new [0 : 15];
+  reg           block_mem_we;
 
   reg [31 : 0]  digest_0_mem [0 : 7];
   reg           digest_0_mem_we;
@@ -223,6 +163,8 @@ module srng_rng(
   trng trng_inst(
 		         .clk(clk),
 		         .reset_n(reset_n),
+
+                 .num_sample_cycles(num_sample_cycles),
                  
 		         .error(trng_error),
                  
@@ -241,26 +183,12 @@ module srng_rng(
       if (!reset_n)
         begin
           for (i = 0 ; i < 8 ; i = i + 1) begin
-            digest_0_mem <= 32'h0;
-            digest_1_mem <= 32'h0;
+            block_mem[i]       <= 32'h0;
+            block_mem[(i + 8)] <= 32'h0;
+            digest_0_mem[i]    <= 32'h0;
+            digest_1_mem[i]    <= 32'h0;
           end
 
-          block_word_0_reg         <= 32'h0;
-          block_word_1_reg         <= 32'h0;
-          block_word_2_reg         <= 32'h0;
-          block_word_3_reg         <= 32'h0;
-          block_word_4_reg         <= 32'h0;
-          block_word_5_reg         <= 32'h0;
-          block_word_6_reg         <= 32'h0;
-          block_word_7_reg         <= 32'h0;
-          block_word_8_reg         <= 32'h0;
-          block_word_9_reg         <= 32'h0;
-          block_word_a_reg         <= 32'h0;
-          block_word_b_reg         <= 32'h0;
-          block_word_c_reg         <= 32'h0;
-          block_word_d_reg         <= 32'h0;
-          block_word_e_reg         <= 32'h0;
-          block_word_f_reg         <= 32'h0;
           seed_status              <= 1'h0;
           digest_word_ctr_reg      <= 3'h0;
           digest_select_reg        <= 1'h0;
@@ -268,68 +196,10 @@ module srng_rng(
         end
       else
         begin
-          if (block_word_0_we) begin
-            block_word_0_reg <= block_word_0_new;
-          end
-
-          if (block_word_1_we) begin
-            block_word_1_reg <= block_word_1_new;
-          end
-
-          if (block_word_2_we) begin
-            block_word_2_reg <= block_word_2_new;
-          end
-
-          if (block_word_3_we) begin
-            block_word_3_reg <= block_word_3_new;
-          end
-
-          if (block_word_4_we) begin
-            block_word_4_reg <= block_word_4_new;
-          end
-
-          if (block_word_5_we) begin
-            block_word_5_reg <= block_word_5_new;
-          end
-
-          if (block_word_6_we) begin
-            block_word_6_reg <= block_word_6_new;
-          end
-
-          if (block_word_7_we) begin
-            block_word_7_reg <= block_word_7_new;
-          end
-
-          if (block_word_8_we) begin
-            block_word_8_reg <= block_word_8_new;
-          end
-
-          if (block_word_9_we) begin
-            block_word_9_reg <= block_word_9_new;
-          end
-
-          if (block_word_a_we) begin
-            block_word_a_reg <= block_word_a_new;
-          end
-
-          if (block_word_b_we) begin
-            block_word_b_reg <= block_word_b_new;
-          end
-
-          if (block_word_c_we) begin
-            block_word_c_reg <= block_word_c_new;
-          end
-
-          if (block_word_d_we) begin
-            block_word_d_reg <= block_word_d_new;
-          end
-
-          if (block_word_e_we) begin
-            block_word_e_reg <= block_word_e_new;
-          end
-
-          if (block_word_f_we) begin
-            block_word_f_reg <= block_word_f_new;
+          if (block_mem_we) begin
+            for (i = 0 ; i < 16 ; i = i + 1) begin
+              block_mem[i] <= block_mem_new[i];
+            end
           end
 
           if (digest_0_mem_we) begin
@@ -406,56 +276,10 @@ module srng_rng(
   // block_logic
   //
   // Logic that seeds or updates the state block.
+  // TODO: We need a block word counter here.
   //----------------------------------------------------------------
   always @*
     begin : block_logic
-      block_word_0_new = trng_data;
-      block_word_0_we = 1'h0;
-
-      block_word_1_new = trng_data;
-      block_word_1_we = 1'h0;
-
-      block_word_2_new = trng_data;
-      block_word_2_we = 1'h0;
-
-      block_word_3_new = trng_data;
-      block_word_3_we = 1'h0;
-
-      block_word_4_new = trng_data;
-      block_word_4_we = 1'h0;
-
-      block_word_5_new = trng_data;
-      block_word_5_we = 1'h0;
-
-      block_word_6_new = trng_data;
-      block_word_6_we = 1'h0;
-
-      block_word_7_new = trng_data;
-      block_word_7_we = 1'h0;
-
-      block_word_8_new = trng_data;
-      block_word_8_we = 1'h0;
-
-      block_word_9_new = trng_data;
-      block_word_9_we = 1'h0;
-
-      block_word_a_new = trng_data;
-      block_word_a_we = 1'h0;
-
-      block_word_b_new = trng_data;
-      block_word_b_we = 1'h0;
-
-      block_word_c_new = trng_data;
-      block_word_c_we = 1'h0;
-
-      block_word_d_new = trng_data;
-      block_word_d_we = 1'h0;
-
-      block_word_e_new = trng_data;
-      block_word_e_we = 1'h0;
-
-      block_word_f_new = trng_data;
-      block_word_f_we = 1'h0;
       
       if (seed_block) begin
         case (block_word_ctr_reg)
