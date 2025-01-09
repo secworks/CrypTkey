@@ -2,9 +2,11 @@
 //
 // srng.v
 // ------
-// Secure random number generator for the ULX3S-HSM.
+// Secure random number generator for the CrypTkey.
 //
-// Author: Joachim Strömbergson// Copyright (c) 2018, Assured AB
+// Author: Joachim Strömbergson
+// Copyright (c) 2025 Assured AB
+//
 //
 // Redistribution and use in source and binary forms, with or
 // without modification, are permitted provided that the following
@@ -34,100 +36,82 @@
 //======================================================================
 
 module srng(
-               input wire           clk,
-               input wire           reset_n,
-
-               input wire           cs,
-               input wire           we,
-
-               input wire  [7 : 0]  address,
-               input wire  [31 : 0] write_data,
-               output wire [31 : 0] read_data
-              );
-
+            input wire           clk,
+            input wire           reset_n,
+            
+            input wire           cs,
+            input wire           we,
+            
+            input wire  [7 : 0]  address,
+            input wire  [31 : 0] write_data,
+            output wire [31 : 0] read_data
+           );
+  
 
   //----------------------------------------------------------------
   // Internal constant and parameter definitions.
   //----------------------------------------------------------------
-  localparam ADDR_CTRL        = 8'h08;
-  localparam CTRL_RESEED      = 0;
+  // API
+  localparam ADDR_CTRL               = 8'h08;
+  localparam CTRL_RESEED_BIT         = 0;
+  localparam ADDR_STATUS             = 8'h09;
+  localparam STATUS_READY_BIT        = 0;
+  localparam STATUS_ERROR_BIT        = 1;
+  localparam ADDR_NUM_DIGESTS        = 8'h0a;
+  localparam ADDR_NUM_SAMPLE_CYCLES  = 8'h0b;
+  localparam ADDR_DATA               = 8'h10;
 
-  localparam ADDR_STATUS      = 8'h09;
-  localparam STATUS_READY_BIT = 0;
-  localparam STATUS_ERROR_BIT = 31;
+  // Default config values.
+  localparam DEFAULT_MAX_NUM_DIGESTS   = 32'h00ffffff;
+  localparam DEFAULT_NUM_SAMPLE_CYCLES = 16'h0400;
 
-  localparam ADDR_DATA        = 8'h10;
-
-
+  
   //----------------------------------------------------------------
   // Registers including update variables and write enable.
   //----------------------------------------------------------------
-  reg          init_reg;
-  reg          init_new;
-  reg          update_reg;
-  reg          update_new;
-  reg          finish_reg;
-  reg          finish_new;
-  reg [6 : 0]  blocklen_reg;
-  reg          blocklen_we;
-
-  reg [31 : 0] block_mem [0 : 15];
-  reg          block_mem_we;
+  reg          next_reg;
+  reg          next_new;
+  reg          reseed_reg;
+  reg          reseed_new;
+  reg [31: 0]  num_digests_reg;
+  reg          num_digests_we;
+  reg [31: 0]  num_sample_cycles_reg;
+  reg          num_sample_cycles_we;
 
 
   //----------------------------------------------------------------
   // Wires.
   //----------------------------------------------------------------
+  wire           core_error;
   wire           core_ready;
-  wire [511 : 0] core_block;
-  wire [255 : 0] core_digest;
+  wire [31 : 0]  core_srng_data;
 
   reg [31 : 0]   tmp_read_data;
-
-  wire           trng_error;
-  wire           trng_ready;
-  wire [31 : 0]  trng_data;
 
 
   //----------------------------------------------------------------
   // Concurrent connectivity for ports etc.
   //----------------------------------------------------------------
-  assign core_block = {block_mem[0],  block_mem[1],  block_mem[2],  block_mem[3],
-                       block_mem[4],  block_mem[5],  block_mem[6],  block_mem[7],
-                       block_mem[8],  block_mem[9],  block_mem[10], block_mem[11],
-                       block_mem[12], block_mem[13], block_mem[14], block_mem[15]};
-
   assign read_data = tmp_read_data;
 
 
   //----------------------------------------------------------------
   // core instantiation.
   //----------------------------------------------------------------
-  blake2s_core blake2s_core_inst(
-				 .clk(clk),
-				 .reset_n(reset_n),
-
-				 .init(init_reg),
-				 .update(update_reg),
-				 .finish(finish_reg),
-
-				 .block(core_block),
-				 .blocklen(blocklen_reg),
-
-				 .digest(core_digest),
-				 .ready(core_ready)
-				 );
-
-
-  trng trng_inst(
-		 .clk(clk),
-		 .reset_n(reset_n),
-
-		 .error(trng_error),
-
-		 .data(trng_data),
-		 .ready(trng_ready)
-		 );
+  srng_core srng_core_inst(
+				           .clk(clk),
+				           .reset_n(reset_n),
+                           
+				           .next(next_reg),
+				           .reseed(reseed_reg),
+                
+                           .num_digests(num_digests_reg),
+                           .num_sample_cycles(num_sample_cycles_reg),
+                           
+                           .error(core_error),
+                           .ready(core_ready),
+                           .srng_data(core_srng_data)
+				           );
 
 
   //----------------------------------------------------------------
@@ -139,26 +123,23 @@ module srng(
 
       if (!reset_n)
         begin
-          for (i = 0 ; i < 16 ; i = i + 1)
-            block_mem[i] <= 32'h0;
-
-          init_reg     <= 1'h0;
-          update_reg   <= 1'h0;
-          finish_reg   <= 1'h0;
-          blocklen_reg <= 7'h0;
+		  next_reg          <= 1'h0;
+		  reseed_reg        <= 1'h0;
+          num_digests_reg <= DEFAULT_MAX_NUM_DIGESTS;
+          num_cycles_reg  <= DEFAULT_NUM_CYCLES;
         end
+
       else
         begin
-          init_reg   <= init_new;
-          update_reg <= update_new;
-          finish_reg <= finish_new;
+          next_reg   <= next_new;
+          reseed_reg <= reseed_new;
 
-          if (blocklen_we) begin
-            blocklen_reg <= write_data[6 : 0];
+          if (num_digests_we) begin
+            num_digests_reg <= write_data;
           end
 
-          if (block_mem_we) begin
-            block_mem[address[3 : 0]] <= write_data;
+          if (num_sample_cycles_we) begin
+            num_sample_cycles_reg <= write_data[15 : 0];
           end
         end
     end // reg_update
@@ -170,40 +151,46 @@ module srng(
   //----------------------------------------------------------------
   always @*
     begin : api
-      init_new      = 1'h0;
-      update_new    = 1'h0;
-      finish_new    = 1'h0;
-      block_mem_we  = 1'h0;
-      blocklen_we   = 1'h0;
-      tmp_read_data = 32'h0;
-
+      next_new             = 1'h0;
+      reseed_new           = 1'h0;
+      num_digests_we       = 1'h0;
+      num_sample_cycles_we = 1'h0;
+      tmp_read_data        = 32'h0;
+      
       if (cs)
         begin
-          if (we)
+          if (we) 
             begin
               if (address == ADDR_CTRL) begin
-                init_new   = write_data[CTRL_INIT_BIT];
-                update_new = write_data[CTRL_UPDATE_BIT];
-                finish_new = write_data[CTRL_FINISH_BIT];
+                reseed_new = write_data[CTRL_RESEED_BIT];
               end
 
-              if (address == ADDR_BLOCKLEN) begin
-                blocklen_we = 1;
+              if (address == ADDR_NUM_DIGESTS) begin
+                num_digests_we = 1'h1;
               end
 
-              if ((address >= ADDR_BLOCK0) && (address <= ADDR_BLOCK15)) begin
-                block_mem_we = 1;
+              if (address == ADDR_NUM_SAMPLE_CYCLES) begin
+                num_sample_cycles_we = 1'h1;
               end
-            end
 
           else
             begin
               if (address == ADDR_STATUS) begin
-                tmp_read_data = {31'h0, core_ready};
+                tmp_read_data[STATUS_READY_BIT] = core_ready;
+                tmp_read_data[STATUS_ERROR_BIT] = core_error;
               end
 
-              if ((address >= ADDR_DIGEST0) && (address <= ADDR_DIGEST7)) begin
-                tmp_read_data = core_digest[(7 - (address - ADDR_DIGEST0)) * 32 +: 32];
+              if (address == ADDR_NUM_DIGESTS) begin
+                tmp_read_dat = num_digests_reg;
+              end
+
+              if (address == ADDR_NUM_SAMPLE_CYCLES) begin
+                tmp_read_dat = num_sample_cycles_reg;
+              end
+
+              if (address == ADDR_DATA) begin
+                tmp_read_dat = core_srng_data;
+                next_new     = 1'h1;
               end
             end
         end
