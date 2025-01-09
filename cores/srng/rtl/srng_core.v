@@ -4,7 +4,19 @@
 // -----------
 // Secure random number generator core for CrypTkey.
 //
-// Author: Joachim Strömbergson// Copyright (c) 2024, Assured AB
+// The core is a Hash_DRBG based on the Blake2s hash function. 
+// Asauming that the user aways checks the ready flag before reading
+// the coree should be able to delicer a word.
+//
+// The user can set the number of digests generated before reseeding.
+// The user can also trigger a reseed when ready is asserted.
+//
+// The user can also control the sample rate of the TRNG by setting
+// the the numver of clock cycles between sampling.
+//
+//
+// Author: Joachim Strömbergson
+// Copyright (c) 2024, Amagicom AB
 //
 // Redistribution and use in source and binary forms, with or
 // without modification, are permitted provided that the following
@@ -37,21 +49,21 @@ module srng_rng(
                 input wire           clk,
                 input wire           reset_n,
                 
-                input wire           seed,
                 input wire           next,
-
+                input wire           reseed,
+                
+                input wire [31 : 0]  num_digests,
+                input wire [15 : 0]  num_sample_cycles,
+                
                 output wire          error,
                 output wire          ready,
-                output wire [31 : 0] read_data
+                output wire [31 : 0] srng_data
               );
 
 
   //----------------------------------------------------------------
   // Internal constant and parameter definitions.
   //----------------------------------------------------------------
-  // Max number of blocks before reseeding.
-  localparam MAX_NUM_BLOCKS = 32'h00000010;
-
   localparam [2: 0] CTRL_IDLE   = 3'h0;
   localparam [2: 0] CTRL_SEED   = 3'h1;
   localparam [2: 0] CTRL_UPDATE = 3'h3;
@@ -171,7 +183,7 @@ module srng_rng(
 
   reg            block_seed;
   reg            block_update;
-  reg [31 : 0]   tmp_read_data;
+  reg [31 : 0]   tmp_srng_data;
 
 
   //----------------------------------------------------------------
@@ -186,8 +198,8 @@ module srng_rng(
                           block_word_c_reg, block_word_d_reg, 
                           block_word_e_reg, block_word_f_reg};
 
-  assign read_data = tmp_read_data;
-
+  assign srng_data = tmp_srng_data;
+  
 
   //----------------------------------------------------------------
   // core instantiation.
@@ -209,14 +221,14 @@ module srng_rng(
 
 
   trng trng_inst(
-		 .clk(clk),
-		 .reset_n(reset_n),
-
-		 .error(trng_error),
-
-		 .data(trng_data),
-		 .ready(trng_ready)
-		 );
+		         .clk(clk),
+		         .reset_n(reset_n),
+                 
+		         .error(trng_error),
+                 
+		         .data(trng_data),
+		         .ready(trng_ready)
+		         );
 
 
   //----------------------------------------------------------------
@@ -367,18 +379,25 @@ module srng_rng(
 
   
   //----------------------------------------------------------------
-  // data_select_logic
+  // read_data_logic
   //
-  // Logic that selects which digest memory and word presented 
-  // to the user when reading the data.
+  // Logic that selects which data word presented to the user 
+  // when the user reads srng data.
   //----------------------------------------------------------------
   always @*
-    begin : data_select_logic;
-      if ~digest_select_reg begin
-        tmp_read_data = digest_0_mem[digest_word_ctr_reg];
+    begin : data_read_logic;
+      if (next) begin
+        digest_word_ctr_inc = 1'h1;
+      end
+      else begin
+        digest_word_ctr_inc = 1'h1;
+      end
+
+      if digest_select_reg begin
+        tmp_srng_data = digest_1_mem[digest_word_ctr_reg];
       end 
       else begin
-        tmp_read_data = digest_1_mem[digest_word_ctr_reg];
+        tmp_srng_data = digest_0_mem[digest_word_ctr_reg];
       end
     end
       
@@ -538,6 +557,8 @@ module srng_rng(
   // srng_ctrl
   //
   // State machine controlling the srng.
+  // The FSM handles the reseding of the DRBG state or generating
+  // of a new digest with random data.
   //----------------------------------------------------------------
   always @*
     begin : api
