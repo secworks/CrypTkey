@@ -87,7 +87,7 @@ module srng_rng(
 
   reg [31 : 0]  digest_mem1 [0 : 7];
   reg           digest_mem1_we;
-    
+7    
   reg [31 : 0]  digest_ctr_reg;
   reg [31 : 0]  digest_ctr_new;
   reg           digest_ctr_inc;
@@ -124,8 +124,10 @@ module srng_rng(
   wire           blake2s_ready;
 
   wire           trng_error;
+  reg            trng_ack_error;
   wire           trng_ready;
   wire [31 : 0]  trng_data;
+  reg            trng_ack_data;
 
   reg            block_seed;
   reg            block_update;
@@ -151,30 +153,32 @@ module srng_rng(
   // core instantiation.
   //----------------------------------------------------------------
   blake2s_core blake2s_core_inst(
-				 .clk(clk),
-				 .reset_n(reset_n),
-
-				 .init(blake2s_init),
-				 .update(blake2s_update),
-				 .finish(blak2s_finish),
-
-				 .block(blake2s_block),
-				 .blocklen(blake2s_block_len),
-
-				 .digest(blake2s_digest),
-				 .ready(blake2s_ready)
-				 );
-
+				                 .clk(clk),
+				                 .reset_n(reset_n),
+                                 
+				                 .init(blake2s_init),
+				                 .update(blake2s_update),
+				                 .finish(blak2s_finish),
+                                 
+				                 .block(blake2s_block),
+				                 .blocklen(blake2s_block_len),
+                                 
+				                 .digest(blake2s_digest),
+				                 .ready(blake2s_ready)
+				                 );
+  
 
   trng trng_inst(
 		         .clk(clk),
 		         .reset_n(reset_n),
-
+                 
                  .num_sample_cycles(num_sample_cycles),
                  
 		         .error(trng_error),
+                 .ack_error(trng_ack_error),
                  
 		         .data(trng_data),
+		         .ack_data(trng_ack_data),
 		         .ready(trng_ready)
 		         );
 
