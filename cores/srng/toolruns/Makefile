@@ -2,8 +2,8 @@
 #
 # Makefile
 # --------
-# Makefile for building the trng simulation model and FPGA bitstream
-# for core testing on hardware.
+# Makefile for linting, simulatin and srng core. This includes
+# building a working FPGA bitstream for testing on an ULX3S board.
 #
 # (c) 2024 Joachim Strömbergson
 #
