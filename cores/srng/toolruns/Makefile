@@ -11,6 +11,9 @@
 
 CORE_SRC_DIR = ../rtl
 CORE_SRC = \
+	$(CORE_SRC_DIR)/blake2s_m_select.v \
+	$(CORE_SRC_DIR)/blake2s_G.v \
+	$(CORE_SRC_DIR)/blake2s_core.v \
 	$(CORE_SRC_DIR)/srng.v \
 	$(CORE_SRC_DIR)/srng_core.v \
 	$(CORE_SRC_DIR)/trng.v

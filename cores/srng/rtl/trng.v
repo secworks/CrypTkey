@@ -66,7 +66,7 @@ module trng(
   localparam NUM_ROSC = 32;
 
   localparam BITS_BETWEEN_READY = 32;
-  localparam MAC_RUN_LENGTH     = 30;
+  localparam MAX_RUN_LENGTH     = 30;
 
   
   // ---------------------------------------------------------------
@@ -251,7 +251,7 @@ module trng(
         error_we           = 1'h1;
       end
       
-      if (error_ack) begin
+      if (ack_error) begin
         error_new          = 1'h0;
         error_we           = 1'h1;
         run_length_ctr_new = 6'h0;

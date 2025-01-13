@@ -123,10 +123,10 @@ module srng(
 
       if (!reset_n)
         begin
-		  next_reg          <= 1'h0;
-		  reseed_reg        <= 1'h0;
-          num_digests_reg <= DEFAULT_MAX_NUM_DIGESTS;
-          num_cycles_reg  <= DEFAULT_NUM_CYCLES;
+		  next_reg              <= 1'h0;
+		  reseed_reg            <= 1'h0;
+          num_digests_reg       <= DEFAULT_MAX_NUM_DIGESTS;
+          num_sample_cycles_reg <= DEFAULT_NUM_SAMPLE_CYCLES;
         end
 
       else
@@ -164,14 +164,15 @@ module srng(
               if (address == ADDR_CTRL) begin
                 reseed_new = write_data[CTRL_RESEED_BIT];
               end
-
+              
               if (address == ADDR_NUM_DIGESTS) begin
                 num_digests_we = 1'h1;
               end
-
+              
               if (address == ADDR_NUM_SAMPLE_CYCLES) begin
                 num_sample_cycles_we = 1'h1;
               end
+            end
 
           else
             begin
@@ -179,18 +180,18 @@ module srng(
                 tmp_read_data[STATUS_READY_BIT] = core_ready;
                 tmp_read_data[STATUS_ERROR_BIT] = core_error;
               end
-
+              
               if (address == ADDR_NUM_DIGESTS) begin
-                tmp_read_dat = num_digests_reg;
+                tmp_read_data = num_digests_reg;
               end
-
+              
               if (address == ADDR_NUM_SAMPLE_CYCLES) begin
-                tmp_read_dat = num_sample_cycles_reg;
+                tmp_read_data = num_sample_cycles_reg;
               end
-
+              
               if (address == ADDR_DATA) begin
-                tmp_read_dat = core_srng_data;
-                next_new     = 1'h1;
+                tmp_read_data = core_srng_data;
+                next_new      = 1'h1;
               end
             end
         end

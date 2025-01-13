@@ -53,8 +53,9 @@ module srng_fpga(
 
   localparam CTRL_IDLE        = 3'h0;
   localparam CTRL_WAIT_CYCLES = 3'h1;
-  localparam READ_STATUS      = 3'h1;
-  localparam READ_DATA        = 3'h2;
+  localparam CTRL_READ_STATUS = 3'h1;
+  localparam CTRL_READ_DATA   = 3'h2;
+  localparam CTRL_UPDATE_LED  = 3'h3;
 
   // Defined API from srng.v
   localparam ADDR_STATUS             = 8'h09;
@@ -75,15 +76,15 @@ module srng_fpga(
   reg          read_srng_data_reg;
   reg          read_srng_data_new;
 
-  reg          core_srng_data_reg;
-  reg          core_srng_data_new;
-  reg          core_srng_data_we;
+  reg [31 : 0] core_read_data_reg;
+  reg [31 : 0] core_read_data_new;
+  reg          core_read_data_we;
   
   reg [7 : 0] led_reg;
   reg         led_we;
 
-  reg [2 ; 0] srng_fpga_ctrl_reg;
-  reg [2 ; 0] srng_fpga_ctrl_new;
+  reg [2 : 0] srng_fpga_ctrl_reg;
+  reg [2 : 0] srng_fpga_ctrl_new;
   reg         srng_fpga_ctrl_we;
   
   
@@ -104,9 +105,9 @@ module srng_fpga(
   // ---------------------------------------------------------------
   // Set GPIO0 high to keep ULX3S board from rebooting.
   assign wifi_gpio0 = 1'h1;
-  assign clk        = clk_25mhz
+  assign clk        = clk_25mhz;
   assign led        = led_reg;
-
+  
   
   // ---------------------------------------------------------------
   // Core instantiation.
@@ -134,7 +135,7 @@ module srng_fpga(
       read_srng_data_reg <= read_srng_data_new;
 
       if (core_read_data_we) begin
-        core_red_data_reg <= core_read_data_new;
+        core_read_data_reg <= core_read_data;
       end
       
       if (led_we) begin
@@ -155,7 +156,7 @@ module srng_fpga(
   // ---------------------------------------------------------------
   always @*
     begin : cycle_ctr
-      if cycle_ctr_reg == NUM_WAIT_CYCLES) begin
+      if (cycle_ctr_reg == NUM_WAIT_CYCLES) begin
         read_srng_data_new = 1'h1;
         cycle_ctr_new      = 32'h0;
       end
