@@ -115,12 +115,12 @@ module cryptkey(
   wire [31 : 0] timer_read_data;
   wire          timer_ready;
 
-//  reg           uart_cs;
-//  reg           uart_we;
-//  reg  [7 : 0]  uart_address;
-//  reg  [31 : 0] uart_write_data;
-//  wire [31 : 0] uart_read_data;
-//  wire          uart_ready;
+  reg           uart_cs;
+  reg           uart_we;
+  reg  [7 : 0]  uart_address;
+  reg  [31 : 0] uart_write_data;
+  wire [31 : 0] uart_read_data;
+  wire          uart_ready;
 
   reg           fpga_ram_cs;
   reg  [3 : 0]  fpga_ram_we;
@@ -162,8 +162,8 @@ module cryptkey(
              .BARREL_SHIFTER(1)
              )
   cpu_inst(
-           .clk(clk_25mhz),
-           .resetn(1'h1),
+           .clk(clk),
+           .resetn(rst_n),
            .trap(cpu_trap),
 
            .mem_valid(cpu_valid),
@@ -233,6 +233,22 @@ module cryptkey(
                     );
 
 
+  uart uart_inst (
+                  .clk(clk),
+                  .reset_n(rst_n),
+
+                  .rxd(ftdi_txd),
+                  .txd(ftdi_rxd),
+
+                  .cs(uart_cs),
+                  .we(uart_we),
+                  .address(uart_address),
+                  .write_data(uart_write_data),
+                  .read_data(uart_read_data),
+                  .ready(uart_ready)
+                  );
+
+
   //----------------------------------------------------------------
   // Reg_update.
   // Posedge triggered with synchronous, active low reset.
@@ -243,12 +259,9 @@ module cryptkey(
         muxed_rdata_reg <= 32'h0;
         muxed_ready_reg <= 1'h0;
         led_ctr_reg     <= 32'h0;
-        ftdi_rxd_reg    <= 1'h0;
-        ftdi_txd_reg    <= 1'h0;
       end
 
       else begin
-        ftdi_txd_reg    <= ftdi_txd;
         muxed_rdata_reg <= muxed_rdata_new;
         muxed_ready_reg <= muxed_ready_new;
         led_ctr_reg     <= led_ctr_reg + 1'h1;
@@ -293,10 +306,10 @@ module cryptkey(
 //      ct_address          = cpu_addr[10 : 2];
 //      ct_write_data       = cpu_wdata;
 
-//      uart_cs             = 1'h0;
-//      uart_we             = |cpu_wstrb;
-//      uart_address        = cpu_addr[9 : 2];
-//      uart_write_data     = cpu_wdata;
+      uart_cs             = 1'h0;
+      uart_we             = |cpu_wstrb;
+      uart_address        = cpu_addr[9 : 2];
+      uart_write_data     = cpu_wdata;
 
       case (area_prefix)
 //        ROM_PREFIX: begin
@@ -325,18 +338,17 @@ module cryptkey(
               muxed_ready_new = fpga_ram_ready;
 	    end
 
-//	    UART_PREFIX: begin
-//              ftdi_rxd_new    = cpu_wdata[0];
-//              ftdi_rxd_we     = ct_we;
-//              muxed_rdata_new = ftdi_txd_reg;
-//              muxed_ready_new = 1'h1;
-//	    end
-
             TIMER_PREFIX: begin
               timer_cs        = 1'h1;
               muxed_rdata_new = timer_read_data;
               muxed_ready_new = timer_ready;
             end
+
+	    UART_PREFIX: begin
+              uart_cs         = 1'h1;
+              muxed_rdata_new = uart_read_data;
+              muxed_ready_new = uart_ready;
+	    end
 
 	    default: begin
 	      muxed_rdata_new = 32'h0;

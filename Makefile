@@ -29,6 +29,9 @@ VERILOG_SRC = \
 	$(CORES_SRC_DIR)/fpga_ram/rtl/fpga_ram.v \
 	$(CORES_SRC_DIR)/timer/rtl/timer.v \
 	$(CORES_SRC_DIR)/timer/rtl/timer_core.v \
+	$(CORES_SRC_DIR)/uart/rtl/uart.v \
+	$(CORES_SRC_DIR)/uart/rtl/uart_core.v \
+	$(CORES_SRC_DIR)/uart/rtl/uart_fifo.v \
 	$(CORES_SRC_DIR)/picorv32/rtl/picorv32.v
 
 
