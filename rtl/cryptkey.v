@@ -56,6 +56,7 @@ module cryptkey (
   localparam UART_PREFIX = 6'h03;
   localparam TOUCH_SENSE_PREFIX = 6'h04;
   localparam FW_RAM_PREFIX = 6'h10;
+  localparam CHACHA_PREFIX = 6'h20;
   localparam CK1_PREFIX = 6'h3f;
 
   // Instruction used to cause a trap.
@@ -124,6 +125,12 @@ module cryptkey (
   reg  [31 : 0] uart_write_data;
   wire [31 : 0] uart_read_data;
   wire          uart_ready;
+
+  reg           chacha_cs;
+  reg           chacha_we;
+  reg  [ 7 : 0] chacha_address;
+  reg  [31 : 0] chacha_write_data;
+  wire [31 : 0] chacha_read_data;
 
   reg           fw_ram_cs;
   reg  [ 3 : 0] fw_ram_we;
@@ -286,6 +293,17 @@ module cryptkey (
       .ready(timer_ready)
   );
 
+  chacha chacha_inst (
+      .clk(clk),
+      .reset_n(reset_n),
+
+      .cs(chacha_cs),
+      .we(chacha_we),
+      .addr(chacha_address),
+      .write_data(chacha_write_data),
+      .read_data(chacha_read_data)
+  );
+
 
 //  uds uds_inst (
 //      .clk(clk),
@@ -410,6 +428,11 @@ module cryptkey (
     timer_address       = cpu_addr[9 : 2];
     timer_write_data    = cpu_wdata;
 
+    chacha_cs            = 1'h0;
+    chacha_we            = |cpu_wstrb;
+    chacha_address       = cpu_addr[9 : 2];
+    chacha_write_data    = cpu_wdata;
+
     uds_cs              = 1'h0;
     uds_address         = cpu_addr[4 : 2];
 
@@ -468,6 +491,12 @@ module cryptkey (
                 timer_cs        = 1'h1;
                 muxed_rdata_new = timer_read_data;
                 muxed_ready_new = timer_ready;
+              end
+
+              CHACHA_PREFIX: begin
+                chacha_cs        = 1'h1;
+                muxed_rdata_new = chacha_read_data;
+                muxed_ready_new = 1'h1;
               end
 
               UDS_PREFIX: begin
