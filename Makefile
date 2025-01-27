@@ -25,6 +25,11 @@ CORES_SRC_DIR = cores
 VERILOG_SRC_DIR = rtl
 VERILOG_SRC = \
 	$(VERILOG_SRC_DIR)/cryptkey.v \
+	$(CORES_SRC_DIR)/poly1305/src/rtl/poly1305_core.v \
+	$(CORES_SRC_DIR)/poly1305/src/rtl/poly1305_final.v \
+	$(CORES_SRC_DIR)/poly1305/src/rtl/poly1305_mulacc.v \
+	$(CORES_SRC_DIR)/poly1305/src/rtl/poly1305_pblock.v \
+	$(CORES_SRC_DIR)/poly1305/src/rtl/poly1305.v \
 	$(CORES_SRC_DIR)/ck1/rtl/ck1.v \
 	$(CORES_SRC_DIR)/clk_reset_gen/rtl/clk_reset_gen.v \
 	$(CORES_SRC_DIR)/fw_ram/rtl/fw_ram.v \

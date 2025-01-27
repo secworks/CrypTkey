@@ -55,6 +55,7 @@ module cryptkey (
   localparam UDS_PREFIX = 6'h02;
   localparam UART_PREFIX = 6'h03;
   localparam TOUCH_SENSE_PREFIX = 6'h04;
+  localparam POLY1305_PREFIX = 6'h28;
   localparam FW_RAM_PREFIX = 6'h10;
   localparam CK1_PREFIX = 6'h3f;
 
@@ -112,6 +113,12 @@ module cryptkey (
   reg  [31 : 0] timer_write_data;
   wire [31 : 0] timer_read_data;
   wire          timer_ready;
+
+  reg           poly1305_cs;
+  reg           poly1305_we;
+  reg  [ 7 : 0] poly1305_address;
+  reg  [31 : 0] poly1305_write_data;
+  wire [31 : 0] poly1305_read_data;
 
   reg           uds_cs;
   reg  [ 2 : 0] uds_address;
@@ -287,6 +294,18 @@ module cryptkey (
   );
 
 
+  poly1305 poly1305_inst (
+      .clk(clk),
+      .reset_n(reset_n),
+
+      .cs(poly1305_cs),
+      .we(poly1305_we),
+      .address(poly1305_address),
+      .write_data(poly1305_write_data),
+      .read_data(poly1305_read_data)
+  );
+
+
 //  uds uds_inst (
 //      .clk(clk),
 //      .reset_n(reset_n),
@@ -410,6 +429,11 @@ module cryptkey (
     timer_address       = cpu_addr[9 : 2];
     timer_write_data    = cpu_wdata;
 
+    poly1305_cs            = 1'h0;
+    poly1305_we            = |cpu_wstrb;
+    poly1305_address       = cpu_addr[9 : 2];
+    poly1305_write_data    = cpu_wdata;
+
     uds_cs              = 1'h0;
     uds_address         = cpu_addr[4 : 2];
 
@@ -468,6 +492,12 @@ module cryptkey (
                 timer_cs        = 1'h1;
                 muxed_rdata_new = timer_read_data;
                 muxed_ready_new = timer_ready;
+              end
+
+              POLY1305_PREFIX: begin
+                poly1305_cs     = 1'h1;
+                muxed_rdata_new = poly1305_read_data;
+                muxed_ready_new = 1'h1;
               end
 
               UDS_PREFIX: begin
