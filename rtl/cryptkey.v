@@ -56,6 +56,7 @@ module cryptkey (
   localparam UART_PREFIX = 6'h03;
   localparam TOUCH_SENSE_PREFIX = 6'h04;
   localparam FW_RAM_PREFIX = 6'h10;
+  localparam SHA256_PREFIX = 6'h1a;
   localparam CK1_PREFIX = 6'h3f;
 
   // Instruction used to cause a trap.
@@ -124,6 +125,13 @@ module cryptkey (
   reg  [31 : 0] uart_write_data;
   wire [31 : 0] uart_read_data;
   wire          uart_ready;
+
+  reg           sha256_cs;
+  reg           sha256_we;
+  reg  [ 7 : 0] sha256_address;
+  reg  [31 : 0] sha256_write_data;
+  wire [31 : 0] sha256_read_data;
+  wire          sha256_ready;
 
   reg           fw_ram_cs;
   reg  [ 3 : 0] fw_ram_we;
@@ -287,6 +295,19 @@ module cryptkey (
   );
 
 
+  sha256 sha256_inst (
+      .clk(clk),
+      .reset_n(reset_n),
+
+      .cs(sha256_cs),
+      .we(sha256_we),
+      .address(sha256_address),
+      .write_data(sha256_write_data),
+      .read_data(sha256_read_data),
+      .error()
+  );
+
+
 //  uds uds_inst (
 //      .clk(clk),
 //      .reset_n(reset_n),
@@ -410,6 +431,11 @@ module cryptkey (
     timer_address       = cpu_addr[9 : 2];
     timer_write_data    = cpu_wdata;
 
+    sha256_cs            = 1'h0;
+    sha256_we            = |cpu_wstrb;
+    sha256_address       = cpu_addr[9 : 2];
+    sha256_write_data    = cpu_wdata;
+
     uds_cs              = 1'h0;
     uds_address         = cpu_addr[4 : 2];
 
@@ -480,6 +506,12 @@ module cryptkey (
                 uart_cs         = 1'h1;
                 muxed_rdata_new = uart_read_data;
                 muxed_ready_new = uart_ready;
+              end
+
+              SHA256_PREFIX: begin
+                sha256_cs         = 1'h1;
+                muxed_rdata_new = sha256_read_data;
+                muxed_ready_new = 1'h1;
               end
 
               TOUCH_SENSE_PREFIX: begin

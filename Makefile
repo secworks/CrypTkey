@@ -25,6 +25,10 @@ CORES_SRC_DIR = cores
 VERILOG_SRC_DIR = rtl
 VERILOG_SRC = \
 	$(VERILOG_SRC_DIR)/cryptkey.v \
+	$(CORES_SRC_DIR)/sha256/src/rtl/sha256_core.v \
+	$(CORES_SRC_DIR)/sha256/src/rtl/sha256_k_constants.v \
+	$(CORES_SRC_DIR)/sha256/src/rtl/sha256.v \
+	$(CORES_SRC_DIR)/sha256/src/rtl/sha256_w_mem.v \
 	$(CORES_SRC_DIR)/ck1/rtl/ck1.v \
 	$(CORES_SRC_DIR)/clk_reset_gen/rtl/clk_reset_gen.v \
 	$(CORES_SRC_DIR)/fw_ram/rtl/fw_ram.v \
