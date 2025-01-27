@@ -50,13 +50,16 @@ module cryptkey (
   localparam MMIO_PREFIX = 2'h3;
 
   // MMIO core sub-prefixes.
-  localparam TRNG_PREFIX = 6'h00;
-  localparam TIMER_PREFIX = 6'h01;
-  localparam UDS_PREFIX = 6'h02;
-  localparam UART_PREFIX = 6'h03;
+  localparam TRNG_PREFIX        = 6'h00;
+  localparam TIMER_PREFIX       = 6'h01;
+  localparam UDS_PREFIX         = 6'h02;
+  localparam UART_PREFIX        = 6'h03;
   localparam TOUCH_SENSE_PREFIX = 6'h04;
-  localparam FW_RAM_PREFIX = 6'h10;
-  localparam CK1_PREFIX = 6'h3f;
+  localparam FW_RAM_PREFIX      = 6'h10;
+
+  localparam AES_PREFIX         = 6'h18;
+
+  localparam CK1_PREFIX         = 6'h3f;
 
   // Instruction used to cause a trap.
   localparam ILLEGAL_INSTRUCTION = 32'h0;
@@ -86,6 +89,12 @@ module cryptkey (
   /* verilator lint_off UNUSED */
   wire [31 : 0] cpu_addr;
   wire [31 : 0] cpu_wdata;
+
+  reg           aes_cs;
+  reg           aes_we;
+  reg  [ 7 : 0] aes_address;
+  reg  [31 : 0] aes_write_data;
+  wire [31 : 0] aes_read_data;
 
   reg           rom_cs;
   reg  [11 : 0] rom_address;
@@ -246,6 +255,16 @@ module cryptkey (
 //      .ready(ram_ready)
 //  );
 
+aes aes_inst(
+             .clk(clk),
+             .reset_n(reset_n),
+
+             .cs(aes_cs),
+             .we(aes_we),
+             .address(aes_address),
+             .write_data(aes_write_data),
+             .read_data(aes_read_data),
+             );
 
   fw_ram fw_ram_inst (
       .clk(clk),
@@ -418,6 +437,11 @@ module cryptkey (
     uart_address        = cpu_addr[9 : 2];
     uart_write_data     = cpu_wdata;
 
+    aes_cs             = 1'h0;
+    aes_we             = |cpu_wstrb;
+    aes_address        = cpu_addr[9 : 2];
+    aes_write_data     = cpu_wdata;
+
     touch_sense_cs      = 1'h0;
     touch_sense_we      = |cpu_wstrb;
     touch_sense_address = cpu_addr[9 : 2];
@@ -492,6 +516,12 @@ module cryptkey (
                 fw_ram_cs       = 1'h1;
                 muxed_rdata_new = fw_ram_read_data;
                 muxed_ready_new = fw_ram_ready;
+              end
+
+              AES_PREFIX: begin
+                aes_cs          = 1'h1;
+                muxed_rdata_new = aes_read_data;
+                muxed_ready_new = 1'h1;
               end
 
               CK1_PREFIX: begin

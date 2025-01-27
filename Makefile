@@ -24,6 +24,13 @@ TOPMOD  = cryptkey
 CORES_SRC_DIR = cores
 VERILOG_SRC_DIR = rtl
 VERILOG_SRC = \
+	$(CORES_SRC_DIR)/aes/src/rtl/aes_core.v \
+	$(CORES_SRC_DIR)/aes/src/rtl/aes_decipher_block.v \
+	$(CORES_SRC_DIR)/aes/src/rtl/aes_encipher_block.v \
+	$(CORES_SRC_DIR)/aes/src/rtl/aes_inv_sbox.v \
+	$(CORES_SRC_DIR)/aes/src/rtl/aes_key_mem.v \
+	$(CORES_SRC_DIR)/aes/src/rtl/aes_sbox.v \
+	$(CORES_SRC_DIR)/aes/src/rtl/aes.v \
 	$(VERILOG_SRC_DIR)/cryptkey.v \
 	$(CORES_SRC_DIR)/ck1/rtl/ck1.v \
 	$(CORES_SRC_DIR)/clk_reset_gen/rtl/clk_reset_gen.v \
