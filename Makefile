@@ -25,14 +25,17 @@ CORES_SRC_DIR = cores
 VERILOG_SRC_DIR = rtl
 VERILOG_SRC = \
 	$(VERILOG_SRC_DIR)/cryptkey.v \
-	$(CORES_SRC_DIR)/clk_reset/rtl/clk_reset_gen.v \
-	$(CORES_SRC_DIR)/fpga_ram/rtl/fpga_ram.v \
+	$(CORES_SRC_DIR)/ck1/rtl/ck1.v \
+	$(CORES_SRC_DIR)/clk_reset_gen/rtl/clk_reset_gen.v \
+	$(CORES_SRC_DIR)/fw_ram/rtl/fw_ram.v \
+	$(CORES_SRC_DIR)/picorv32/rtl/picorv32.v \
+	$(CORES_SRC_DIR)/rom/rtl/rom.v \
 	$(CORES_SRC_DIR)/timer/rtl/timer.v \
 	$(CORES_SRC_DIR)/timer/rtl/timer_core.v \
+	$(CORES_SRC_DIR)/trng/rtl/trng.v \
 	$(CORES_SRC_DIR)/uart/rtl/uart.v \
 	$(CORES_SRC_DIR)/uart/rtl/uart_core.v \
-	$(CORES_SRC_DIR)/uart/rtl/uart_fifo.v \
-	$(CORES_SRC_DIR)/picorv32/rtl/picorv32.v
+	$(CORES_SRC_DIR)/uart/rtl/uart_fifo.v
 
 
 #-------------------------------------------------------------------
@@ -59,7 +62,10 @@ fpga.config: fpga.json
 
 
 fpga.json: $(VERILOG_SRC)
-	yosys -p 'read_verilog $^; synth_ecp5 -json $@'
+	yosys \
+	-l synth.txt \
+	-DFIRMWARE_HEX=\"fw/firmware.hex\" \
+	-p 'read_verilog $^; synth_ecp5 -json $@'
 
 
 #-------------------------------------------------------------------

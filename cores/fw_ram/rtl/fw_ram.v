@@ -1,10 +1,9 @@
 //======================================================================
 //
-// rom.v
-// ------
-// Firmware ROM module. Implemented using Embedded Block RAM
-// in the FPGA.
-//
+// fw_ram.v
+// --------
+// A 512 x 32 RAM (2048 bytes) for use by the FW. The memory has
+// support for mode based access control.
 //
 // Author: Joachim Strombergson
 // Copyright (C) 2022 - Tillitis AB
@@ -14,34 +13,41 @@
 
 `default_nettype none
 
-module rom (
+module fw_ram (
     input wire clk,
     input wire reset_n,
 
+    input wire system_mode,
+
     input  wire          cs,
-    /* verilator lint_off UNUSED */
-    input  wire [11 : 0] address,
-    /* verilator lint_on UNUSED */
+    input  wire [ 3 : 0] we,
+    input  wire [ 8 : 0] address,
+    input  wire [31 : 0] write_data,
     output wire [31 : 0] read_data,
     output wire          ready
 );
 
 
   //----------------------------------------------------------------
-  // Registers, memories with associated wires.
+  // Registers and wires.
   //----------------------------------------------------------------
-  reg [31 : 0] memory[0 : 3071];
-  initial $readmemh(`FIRMWARE_HEX, memory);
+  reg [31 : 0] fw_ram_mem [0 : 511];
 
-  reg [31 : 0] rom_rdata;
-  reg          ready_reg;
+  reg  [31 : 0] tmp_read_data;
+  reg  [31 : 0] mem_read_data0;
+  reg  [31 : 0] mem_read_data1;
+  reg           ready_reg;
+  wire          system_mode_cs;
+  reg           bank0;
+  reg           bank1;
 
 
   //----------------------------------------------------------------
-  // Concurrent assignments of ports.
+  // Concurrent assignment of ports.
   //----------------------------------------------------------------
-  assign read_data = rom_rdata;
-  assign ready     = ready_reg;
+  assign read_data      = fw_ram_mem[address];
+  assign ready          = ready_reg;
+  assign system_mode_cs = cs && ~system_mode;
 
 
   //----------------------------------------------------------------
@@ -53,21 +59,17 @@ module rom (
     end
     else begin
       ready_reg <= cs;
+
+      if (cs) begin
+        if (we) begin
+          fw_ram_mem[address] <= write_data;
+        end
+      end
     end
-  end  // reg_update
-
-
-  //----------------------------------------------------------------
-  // rom_logic
-  //----------------------------------------------------------------
-  always @* begin : rom_logic
-    /* verilator lint_off WIDTH */
-    rom_rdata = memory[address];
-    /* verilator lint_on WIDTH */
   end
 
-endmodule  // rom
+endmodule  // fw_ram
 
 //======================================================================
-// EOF rom.v
+// EOF fw_ram.v
 //======================================================================

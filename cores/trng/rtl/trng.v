@@ -114,20 +114,8 @@ module trng (
     for (i = 0; i < NUM_ROSC; i = i + 1) begin : oscillators
       /* verilator lint_off PINMISSING */
       /* verilator lint_off UNOPTFLAT */
-      (* keep *)
-      SB_LUT4 #(
-          .LUT_INIT(16'h1)
-      ) osc_inv_f (
-          .I0(f[i]),
-          .O (f[i])
-      );
-
-      (* keep *) SB_LUT4 #(
-          .LUT_INIT(16'h1)
-      ) osc_inv_g (
-          .I0(g[i]),
-          .O (g[i])
-      );
+      (* keep *) LUT4 #(.INIT(16'h1)) rosc_0 (.A(f[i]), .B(0), .C(0), .D(0), .Z(f[i]));
+      (* keep *) LUT4 #(.INIT(16'h1)) rosc_1 (.A(g[i]), .B(0), .C(0), .D(0), .Z(g[i]));
       /* verilator lint_on UNOPTFLAT */
       /* verilator lint_on PINMISSING */
     end
