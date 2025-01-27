@@ -24,6 +24,10 @@ TOPMOD  = cryptkey
 CORES_SRC_DIR = cores
 VERILOG_SRC_DIR = rtl
 VERILOG_SRC = \
+	$(CORES_SRC_DIR)/blake2s/src/rtl/blake2s_core.v \
+	$(CORES_SRC_DIR)/blake2s/src/rtl/blake2s_G.v \
+	$(CORES_SRC_DIR)/blake2s/src/rtl/blake2s_m_select.v \
+	$(CORES_SRC_DIR)/blake2s/src/rtl/blake2s.v \
 	$(VERILOG_SRC_DIR)/cryptkey.v \
 	$(CORES_SRC_DIR)/ck1/rtl/ck1.v \
 	$(CORES_SRC_DIR)/clk_reset_gen/rtl/clk_reset_gen.v \
@@ -36,6 +40,7 @@ VERILOG_SRC = \
 	$(CORES_SRC_DIR)/uart/rtl/uart.v \
 	$(CORES_SRC_DIR)/uart/rtl/uart_core.v \
 	$(CORES_SRC_DIR)/uart/rtl/uart_fifo.v
+
 
 
 #-------------------------------------------------------------------
