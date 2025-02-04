@@ -68,13 +68,13 @@ module clk_reset_gen #(
             .OUTDIVIDER_MUXB("DIVB"),
             .OUTDIVIDER_MUXC("DIVC"),
             .OUTDIVIDER_MUXD("DIVD"),
-            .CLKI_DIV(1),
+            .CLKI_DIV(3),
             .CLKOP_ENABLE("ENABLED"),
-            .CLKOP_DIV(12),
+            .CLKOP_DIV(9),
             .CLKOP_CPHASE(2),
             .CLKOP_FPHASE(0),
             .FEEDBK_PATH("CLKOP"),
-            .CLKFB_DIV(2)
+            .CLKFB_DIV(4)
             )
   ehxpll_inst(
               .RST(1'b0),

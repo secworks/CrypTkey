@@ -17,27 +17,15 @@
 `default_nettype none
 
 module cryptkey (
-                         input wire clk_25mhz,
-                         output wire wifi_gpio0,
+                 input wire  clk48,
 
-                         input wire ftdi_txd,
-                         output wire ftdi_rxd,
+                 input wire  gpio_0,
+                 output wire gpio_1,
 
-//                         output wire spi_ss,
-//                         output wire spi_sck,
-//                         output wire spi_mosi,
-//                         input  wire spi_miso,
-
-//                         input  wire app_gpio1,
-//                         input  wire app_gpio2,
-//                         output wire app_gpio3,
-//                         output wire app_gpio4,
-
-                         output [7 : 0] led
-//                         output wire led_r,
-//                         output wire led_g,
-//                         output wire led_b
-                        );
+                 output wire rgb_led0_r,
+                 output wire rgb_led0_g,
+                 output wire rgb_led0_b
+                 );
 
 
   //----------------------------------------------------------------
@@ -124,6 +112,8 @@ module cryptkey (
   reg  [31 : 0] uart_write_data;
   wire [31 : 0] uart_read_data;
   wire          uart_ready;
+  wire          uart_rxd;
+  wire          uart_txd;
 
   reg           fw_ram_cs;
   reg  [ 3 : 0] fw_ram_we;
@@ -159,9 +149,12 @@ module cryptkey (
   //----------------------------------------------------------------
   // Assignments.
   //----------------------------------------------------------------
-  assign wifi_gpio0 = 1'h1;
-  assign led        = {tmp_led_r, tmp_led_r, tmp_led_g,tmp_led_g,
-                       tmp_led_b, tmp_led_b, cpu_addr[5 : 4]};
+  assign rgb_led0_r = tmp_led_r;
+  assign rgb_led0_g = tmp_led_g;
+  assign rgb_led0_b = tmp_led_b;
+
+  assign uart_txd = gpio_0;
+  assign gpio_1 = uart_rxd;
 
 
   //----------------------------------------------------------------
@@ -170,7 +163,7 @@ module cryptkey (
   clk_reset_gen #(
       .RESET_CYCLES(200)
   ) reset_gen_inst (
-                    .clk_ref(clk_25mhz),
+                    .clk_ref(clk48),
                     .clk(clk),
                     .rst_n(reset_n)
   );
@@ -304,8 +297,8 @@ module cryptkey (
       .clk(clk),
       .reset_n(reset_n),
 
-      .rxd(ftdi_txd),
-      .txd(ftdi_rxd),
+      .rxd(uart_txd),
+      .txd(uart_rxd),
 
       .cs(uart_cs),
       .we(uart_we),

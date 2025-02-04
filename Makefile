@@ -41,22 +41,27 @@ VERILOG_SRC = \
 #-------------------------------------------------------------------
 # Build everything.
 #-------------------------------------------------------------------
-all: fpga.bit
+all: fpga.dfu
 
 
 #-------------------------------------------------------------------
 # Main FPGA build flow.
 # Synthesis. Place & Route. Bitstream generation.
 #-------------------------------------------------------------------
+fpga.dfu: fpga.bit
+	cp fpga.bit fpga.dfu
+	dfu-suffix -v 1209 -p 5af0 -a fpga.dfu
+
+
 fpga.bit: fpga.config
 	ecppack fpga.config fpga.bit
 
 
 fpga.config: fpga.json
 	nextpnr-ecp5 --85k --json $^ \
-		--lpf config/ulx3s_v20.lpf \
+		--lpf config/orangecrab_r0.2.1.pcf \
 		--top cryptkey \
-		--package CABGA381 \
+		--package CSFBGA285 \
 		--ignore-loops \
 		--textcfg $@
 
@@ -70,9 +75,15 @@ fpga.json: $(VERILOG_SRC)
 
 #-------------------------------------------------------------------
 # FPGA device programming.
+# With fujproj for ULX3S, or dfu for OrangeCrab.
 #-------------------------------------------------------------------
 prog: fpga.bit
 	fujprog $^
+
+
+dfu: fpga.dfu
+	dfu-util --alt 0 -D $<
+
 
 
 #-------------------------------------------------------------------
@@ -82,6 +93,8 @@ clean:
 	rm -f fpga.json
 	rm -f fpga.config
 	rm -f fpga.bit
+	rm -f fpga.dfu
+	rm -f synth.txt
 
 
 #-------------------------------------------------------------------
