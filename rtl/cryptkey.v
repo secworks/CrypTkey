@@ -44,6 +44,8 @@ module cryptkey (
   localparam UART_PREFIX = 6'h03;
   localparam TOUCH_SENSE_PREFIX = 6'h04;
   localparam FW_RAM_PREFIX = 6'h10;
+
+  localparam MODEXP_PREFIX = 6'h31;
   localparam CK1_PREFIX = 6'h3f;
 
   // Instruction used to cause a trap.
@@ -100,6 +102,13 @@ module cryptkey (
   reg  [31 : 0] timer_write_data;
   wire [31 : 0] timer_read_data;
   wire          timer_ready;
+
+  reg           modexp_cs;
+  reg           modexp_we;
+  reg  [ 7 : 0] modexp_address;
+  reg  [31 : 0] modexp_write_data;
+  wire [31 : 0] modexp_read_data;
+  wire          modexp_ready;
 
   reg           uds_cs;
   reg  [ 2 : 0] uds_address;
@@ -280,6 +289,18 @@ module cryptkey (
   );
 
 
+  modexp modexp_inst (
+      .clk(clk),
+      .reset_n(reset_n),
+
+      .cs(modexp_cs),
+      .we(modexp_we),
+      .address(modexp_address),
+      .write_data(modexp_write_data),
+      .read_data(modexp_read_data)
+  );
+
+
 //  uds uds_inst (
 //      .clk(clk),
 //      .reset_n(reset_n),
@@ -403,6 +424,11 @@ module cryptkey (
     timer_address       = cpu_addr[9 : 2];
     timer_write_data    = cpu_wdata;
 
+    modexp_cs            = 1'h0;
+    modexp_we            = |cpu_wstrb;
+    modexp_address       = cpu_addr[9 : 2];
+    modexp_write_data    = cpu_wdata;
+
     uds_cs              = 1'h0;
     uds_address         = cpu_addr[4 : 2];
 
@@ -461,6 +487,12 @@ module cryptkey (
                 timer_cs        = 1'h1;
                 muxed_rdata_new = timer_read_data;
                 muxed_ready_new = timer_ready;
+              end
+
+              MODEXP_PREFIX: begin
+                modexp_cs        = 1'h1;
+                muxed_rdata_new = modexp_read_data;
+                muxed_ready_new = 1'h1;
               end
 
               UDS_PREFIX: begin

@@ -32,6 +32,17 @@ VERILOG_SRC = \
 	$(CORES_SRC_DIR)/rom/rtl/rom.v \
 	$(CORES_SRC_DIR)/timer/rtl/timer.v \
 	$(CORES_SRC_DIR)/timer/rtl/timer_core.v \
+	$(CORES_SRC_DIR)/modexp/src/rtl/adder.v \
+	$(CORES_SRC_DIR)/modexp/src/rtl/blockmem1r1w.v \
+	$(CORES_SRC_DIR)/modexp/src/rtl/blockmem2r1wptr.v \
+	$(CORES_SRC_DIR)/modexp/src/rtl/blockmem2r1w.v \
+	$(CORES_SRC_DIR)/modexp/src/rtl/blockmem2rptr1w.v \
+	$(CORES_SRC_DIR)/modexp/src/rtl/modexp_core.v \
+	$(CORES_SRC_DIR)/modexp/src/rtl/modexp.v \
+	$(CORES_SRC_DIR)/modexp/src/rtl/montprod.v \
+	$(CORES_SRC_DIR)/modexp/src/rtl/residue.v \
+	$(CORES_SRC_DIR)/modexp/src/rtl/shl.v \
+	$(CORES_SRC_DIR)/modexp/src/rtl/shr.v \
 	$(CORES_SRC_DIR)/trng/rtl/trng.v \
 	$(CORES_SRC_DIR)/uart/rtl/uart.v \
 	$(CORES_SRC_DIR)/uart/rtl/uart_core.v \
