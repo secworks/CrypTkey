@@ -71,8 +71,9 @@ fpga.config: fpga.json
 fpga.json: $(VERILOG_SRC)
 	yosys \
 	-l synth.txt \
+	-v3 \
 	-DFIRMWARE_HEX=\"fw/firmware.hex\" \
-	-p 'read_verilog $^; synth_ecp5 -json $@'
+	-p 'read_verilog $^; synth_ecp5 -abc2 -dff -top cryptkey -json $@'
 
 
 #-------------------------------------------------------------------
