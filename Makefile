@@ -73,7 +73,7 @@ fpga.json: $(VERILOG_SRC)
 	-l synth.txt \
 	-v3 \
 	-DFIRMWARE_HEX=\"fw/firmware.hex\" \
-	-p 'read_verilog $^; synth_ecp5 -abc2 -dff -top cryptkey -json $@'
+	-p 'read_verilog $^; synth_ecp5 -dff -top cryptkey -json $@'
 
 
 #-------------------------------------------------------------------
