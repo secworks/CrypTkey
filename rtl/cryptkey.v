@@ -287,17 +287,17 @@ module cryptkey (
   );
 
 
-//  uds uds_inst (
-//      .clk(clk),
-//      .reset_n(reset_n),
-//
-//      .system_mode(system_mode),
-//
-//      .cs(uds_cs),
-//      .address(uds_address),
-//      .read_data(uds_read_data),
-//      .ready(uds_ready)
-//  );
+  uds uds_inst (
+      .clk(clk),
+      .reset_n(reset_n),
+
+      .system_mode(system_mode),
+
+      .cs(uds_cs),
+      .address(uds_address),
+      .read_data(uds_read_data),
+      .ready(uds_ready)
+  );
 
 
   uart uart_inst (
@@ -472,8 +472,8 @@ module cryptkey (
 
               UDS_PREFIX: begin
                 uds_cs          = 1'h1;
-                muxed_rdata_new = 32'hdeadbeef;
-                muxed_ready_new = 1'h1;
+                muxed_rdata_new = uds_read_data;
+                muxed_ready_new = uds_ready;
               end
 
               UART_PREFIX: begin

@@ -33,6 +33,8 @@ VERILOG_SRC = \
 	$(CORES_SRC_DIR)/timer/rtl/timer.v \
 	$(CORES_SRC_DIR)/timer/rtl/timer_core.v \
 	$(CORES_SRC_DIR)/trng/rtl/trng.v \
+	$(CORES_SRC_DIR)/uds/rtl/uds.v \
+	$(CORES_SRC_DIR)/uds/rtl/uds_rom.v \
 	$(CORES_SRC_DIR)/uart/rtl/uart.v \
 	$(CORES_SRC_DIR)/uart/rtl/uart_core.v \
 	$(CORES_SRC_DIR)/uart/rtl/uart_fifo.v
