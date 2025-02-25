@@ -37,6 +37,8 @@ VERILOG_SRC = \
 	$(CORES_SRC_DIR)/uart/rtl/uart_core.v \
 	$(CORES_SRC_DIR)/uart/rtl/uart_fifo.v
 
+TOOL_PREFIX=/opt/oss-cad-suite/bin
+
 
 #-------------------------------------------------------------------
 # Build everything.
@@ -49,11 +51,11 @@ all: fpga.bit
 # Synthesis. Place & Route. Bitstream generation.
 #-------------------------------------------------------------------
 fpga.bit: fpga.config
-	ecppack fpga.config fpga.bit
+	$(TOOL_PREFIX)/ecppack fpga.config fpga.bit
 
 
 fpga.config: fpga.json
-	nextpnr-ecp5 --85k --json $^ \
+	$(TOOL_PREFIX)/nextpnr-ecp5 --85k --json $^ \
 		--lpf config/ulx3s_v20.lpf \
 		--top cryptkey \
 		--package CABGA381 \
@@ -62,7 +64,7 @@ fpga.config: fpga.json
 
 
 fpga.json: $(VERILOG_SRC)
-	yosys \
+	$(TOOL_PREFIX)/yosys \
 	-l synth.txt \
 	-v3 \
 	-DFIRMWARE_HEX=\"fw/firmware.hex\" \
